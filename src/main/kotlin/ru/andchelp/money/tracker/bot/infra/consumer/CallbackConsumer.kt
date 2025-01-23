@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.andchelp.money.tracker.bot.config.ConsumerOrder
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
+import ru.andchelp.money.tracker.bot.handler.type.CallbackUpdate
 
 
 @Order(ConsumerOrder.CALLBACK)
@@ -20,7 +21,7 @@ class CallbackConsumer(
     override fun consume(update: Update) {
         val clbk = update.callbackQuery.data.substringBefore(":")
         handlers[clbk]?.let {
-            it.handle(update)
+            it.handle(CallbackUpdate(update))
             LOG.debug { "Called handler for $clbk" }
         } ?: LOG.debug { "Unexpected callback $clbk" }
     }

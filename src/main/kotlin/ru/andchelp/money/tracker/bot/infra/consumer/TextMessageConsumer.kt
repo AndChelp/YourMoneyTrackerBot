@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.andchelp.money.tracker.bot.config.ConsumerOrder
 import ru.andchelp.money.tracker.bot.handler.type.TextMessageHandler
+import ru.andchelp.money.tracker.bot.handler.type.TextMessageUpdate
 
 @Order(ConsumerOrder.TEXT_MESSAGE)
 @Component
@@ -17,7 +18,7 @@ class TextMessageConsumer(
     }
 
     override fun consume(update: Update) {
-        handlers.forEach { it.handle(update) }
+        handlers.forEach { it.handle(TextMessageUpdate(update)) }
         LOG.info { "TextMessageConsumer called" }
     }
 

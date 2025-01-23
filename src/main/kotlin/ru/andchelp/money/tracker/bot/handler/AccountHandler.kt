@@ -10,11 +10,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.andchelp.money.tracker.bot.addBackButton
-import ru.andchelp.money.tracker.bot.config.MenuConfig
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.TextMessageHandler
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
-import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
 import ru.andchelp.money.tracker.bot.infra.NewAccountContext
 import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
@@ -28,9 +26,8 @@ class AccountHandler(
     val userService: UserService
 ) {
     @Bean("account_menu_clicked")
-    fun accountMenu() = TextMessageHandler { update ->
-        val message = update.message
-        if (message.text != "Счета" || ContextHolder.current[message.chatId] != null) return@TextMessageHandler
+    fun accountMenu() = TextMessageHandler { msg ->
+        if (msg.text != "Счета" || ContextHolder.current[msg.chatId] != null) return@TextMessageHandler
         val inlineKeyboardMarkup = InlineKeyboardMarkup(
             listOf(
                 InlineKeyboardRow(
@@ -42,18 +39,18 @@ class AccountHandler(
             )
         )
 
-        val accounts = accountService.findAccounts(message.from.id)
+        val accounts = accountService.findAccounts(msg.userId)
         val sendMessage = if (accounts.isEmpty()) {
             SendMessage.builder()
                 .text(
                     "У вас еще нет счетов!\n" +
                             "Для создания нового счета нажмите кнопку ниже"
                 )
-                .chatId(message.chatId)
+                .chatId(msg.chatId)
                 .replyMarkup(inlineKeyboardMarkup)
                 .build()
         } else {
-            val totalBalance = accountService.calcTotalBalance(message.from.id)
+            val totalBalance = accountService.calcTotalBalance(msg.userId)
             val let = accounts.map {
                 InlineKeyboardRow(
                     InlineKeyboardButton.builder()
@@ -70,14 +67,14 @@ class AccountHandler(
                         .build()
                 )
             )
-            val user = userService.findById(message.from.id)
+            val user = userService.findById(msg.userId)
 
             SendMessage.builder()
                 .text(
                     "Общий баланс: $totalBalance ${user.totalBalanceCurrency}\n" +
                             "Ваши счета:"
                 )
-                .chatId(message.chatId)
+                .chatId(msg.chatId)
                 .replyMarkup(let)
                 .build()
         }
@@ -88,28 +85,25 @@ class AccountHandler(
     }
 
     @Bean("new_account")
-    fun newAccount() = CallbackHandler { update ->
-        val message = update.callbackQuery.message
+    fun newAccount() = CallbackHandler { clbk ->
         val editMessageText = EditMessageText.builder()
-            .chatId(message.chatId)
-            .messageId(message.messageId)
+            .chatId(clbk.chatId)
+            .messageId(clbk.msgId)
             .text("Введите название счета")
             .build()
         client.execute(editMessageText)
-        ContextHolder.current[message.chatId] = NewAccountContext(message.messageId)
+        ContextHolder.current[clbk.chatId] = NewAccountContext(clbk.msgId)
     }
 
     @Bean("account_name_msg")
-    fun accountName() = TextMessageHandler { update ->
-        val message = update.message
-
-        val context = ContextHolder.current[message.chatId]
+    fun accountName() = TextMessageHandler { msg ->
+        val context = ContextHolder.current[msg.chatId]
         if (context !is NewAccountContext || context.name != null) return@TextMessageHandler
 
         val editMessageText = EditMessageText.builder()
-            .chatId(message.chatId)
+            .chatId(msg.chatId)
             .messageId(context.baseMsgId)
-            .text("Название счета: ${message.text}\nВыберите валюту счета")
+            .text("Название счета: ${msg.text}\nВыберите валюту счета")
             .replyMarkup(
                 currencyService
                     .getCurrenciesKeyboard("account_currency")
@@ -117,16 +111,14 @@ class AccountHandler(
             )
             .build()
         client.execute(editMessageText)
-        client.execute(DeleteMessage(message.chatId.toString(), message.messageId))
+        client.execute(DeleteMessage(msg.chatId.toString(), msg.msgId))
 
-        context.name = message.text
+        context.name = msg.text
     }
 
     @Bean("account_currency")
-    fun accountCurrencyClbk() = CallbackHandler { update ->
-        val message = update.callbackQuery.message
-
-        val context = ContextHolder.current[message.chatId]
+    fun accountCurrencyClbk() = CallbackHandler { clbk ->
+        val context = ContextHolder.current[clbk.chatId]
         if (context !is NewAccountContext || context.currency != null) return@CallbackHandler
         val inlineKeyboardMarkup = InlineKeyboardMarkup(
             mutableListOf(
@@ -138,10 +130,10 @@ class AccountHandler(
                 )
             )
         ).addBackButton("new_account")
-        val currency = update.callbackQuery.data.substringAfter(":")
+        val currency = clbk.data
         val editMessageText = EditMessageText.builder()
-            .chatId(message.chatId)
-            .messageId(message.messageId)
+            .chatId(clbk.chatId)
+            .messageId(clbk.msgId)
             .text(
                 "Название счета: ${context.name}\n" +
                         "Валюта: $currency"
@@ -154,46 +146,45 @@ class AccountHandler(
     }
 
     @Bean("complete_account_creation")
-    fun completeAccountCreationClbk() = CallbackHandler { update ->
-        val message = update.callbackQuery.message
-        val accountContext = ContextHolder.current[message.chatId] as NewAccountContext
+    fun completeAccountCreationClbk() = CallbackHandler { clbk ->
+        val accountContext = ContextHolder.current[clbk.chatId] as NewAccountContext
 
-        accountService.newAccount(update.callbackQuery.from.id, accountContext.name!!, accountContext.currency!!)
+        accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
 
-        val accounts = accountService.findAccounts(update.callbackQuery.from.id)
-            val totalBalance = accountService.calcTotalBalance(update.callbackQuery.from.id)
-            val let = accounts.map {
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text("${it.name} - ${it.balance!!.balance} ${it.currencyCode}")
-                        .callbackData("account_clbk:${it.id}")
-                        .build()
-                )
-            }.let { InlineKeyboardMarkup(it) }
-            let.keyboard.add(
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text("Новый счет")
-                        .callbackData("new_account")
-                        .build()
-                )
+        val accounts = accountService.findAccounts(clbk.userId)
+        val totalBalance = accountService.calcTotalBalance(clbk.userId)
+        val let = accounts.map {
+            InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                    .text("${it.name} - ${it.balance!!.balance} ${it.currencyCode}")
+                    .callbackData("account_clbk:${it.id}")
+                    .build()
             )
+        }.let { InlineKeyboardMarkup(it) }
+        let.keyboard.add(
+            InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                    .text("Новый счет")
+                    .callbackData("new_account")
+                    .build()
+            )
+        )
 
-        val user = userService.findById(update.callbackQuery.from.id)
+        val user = userService.findById(clbk.userId)
 
         val sendMessage = EditMessageText.builder()
             .text(
                 "Общий баланс: $totalBalance ${user.totalBalanceCurrency}\n" +
                         "Ваши счета:"
             )
-            .chatId(message.chatId)
-            .messageId(message.messageId)
+            .chatId(clbk.chatId)
+            .messageId(clbk.msgId)
             .replyMarkup(let)
             .build()
 
         client.execute(
             sendMessage
         )
-        ContextHolder.current.remove(message.chatId)
+        ContextHolder.current.remove(clbk.chatId)
     }
 }

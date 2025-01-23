@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.EntityType
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.andchelp.money.tracker.bot.config.ConsumerOrder
 import ru.andchelp.money.tracker.bot.handler.type.CommandHandler
+import ru.andchelp.money.tracker.bot.handler.type.CommandUpdate
 
 @Order(ConsumerOrder.COMMAND)
 @Component
@@ -22,7 +23,7 @@ class CommandConsumer(
             ?: throw RuntimeException("CommandConsumer called without a command")
 
         handlers[cmd]?.let {
-            it.handle(update)
+            it.handle(CommandUpdate(update))
             LOG.debug { "Called handler for $cmd" }
         } ?: LOG.debug { "Unexpected command $cmd" }
     }
