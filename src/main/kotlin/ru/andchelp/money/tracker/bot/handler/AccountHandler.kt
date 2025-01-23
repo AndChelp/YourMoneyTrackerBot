@@ -18,12 +18,14 @@ import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
 import ru.andchelp.money.tracker.bot.infra.NewAccountContext
 import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
+import ru.andchelp.money.tracker.bot.service.UserService
 
 @Configuration
 class AccountHandler(
     val client: TelegramClient,
     val accountService: AccountService,
-    val currencyService: CurrencyService
+    val currencyService: CurrencyService,
+    val userService: UserService
 ) {
     @Bean("account_menu_clicked")
     fun accountMenu() = TextMessageHandler { update ->
@@ -68,10 +70,11 @@ class AccountHandler(
                         .build()
                 )
             )
+            val user = userService.findById(message.from.id)
 
             SendMessage.builder()
                 .text(
-                    "Общий баланс: $totalBalance ₽\n" +
+                    "Общий баланс: $totalBalance ${user.totalBalanceCurrency}\n" +
                             "Ваши счета:"
                 )
                 .chatId(message.chatId)
@@ -176,9 +179,11 @@ class AccountHandler(
                 )
             )
 
+        val user = userService.findById(update.callbackQuery.from.id)
+
         val sendMessage = EditMessageText.builder()
             .text(
-                "Общий баланс: $totalBalance ₽\n" +
+                "Общий баланс: $totalBalance ${user.totalBalanceCurrency}\n" +
                         "Ваши счета:"
             )
             .chatId(message.chatId)
