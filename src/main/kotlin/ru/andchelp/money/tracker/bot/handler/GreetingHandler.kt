@@ -2,18 +2,13 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
-import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.andchelp.money.tracker.bot.addBackButton
 import ru.andchelp.money.tracker.bot.config.MenuConfig
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.CommandHandler
 import ru.andchelp.money.tracker.bot.handler.type.TextMessageHandler
+import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
 import ru.andchelp.money.tracker.bot.model.User
@@ -21,155 +16,95 @@ import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.UserService
+import ru.andchelp.money.tracker.bot.withRow
 
 @Configuration
 class GreetingHandler(
-    val client: TelegramClient,
-    val currencyService: CurrencyService,
-    val messageService: MessageService,
-    val userService: UserService,
-    val accountService: AccountService
+    private val currencyService: CurrencyService,
+    private val msgService: MessageService,
+    private val userService: UserService,
+    private val accountService: AccountService
 ) {
 
     @Bean("/start")
     fun startCmd() = CommandHandler { cmd ->
-
-        try {
-            userService.findById(cmd.userId)
-            val msg = SendMessage.builder()
-                .chatId(cmd.chatId)
-                .text(
-                    "Используйте кнопку меню для навигации"
-                )
-                .replyMarkup(MenuConfig.FULL)
-                .build()
-            client.execute(msg)
-        } catch (_: Exception) {
-            client.execute(
-                SendMessage.builder()
-                    .text(messageService.msgFor("greeting.few.steps"))
-                    .chatId(cmd.chatId)
-                    .replyMarkup(MenuConfig.SIMPLE)
-                    .build()
-            )
-            client.execute(
-                SendMessage.builder()
-                    .chatId(cmd.chatId)
-                    .text(messageService.msgFor("greeting.please.select.currency"))
-                    .replyMarkup(currencyService.getCurrenciesKeyboard("global_currency"))
-                    .build()
-            )
+        if (userService.userExists(cmd.userId)) {
+            msgService.send(USE_MENU_FOR_NAVIGATION, *MenuConfig.FULL.toTypedArray())
+        } else {
+            msgService.send(FEW_STEPS, *MenuConfig.SIMPLE.toTypedArray())
+            msgService.send(SELECT_CURRENCY, currencyService.getKeyboard("global_currency"))
         }
     }
 
     @Bean("global_currency")
     fun currencyClbk() = CallbackHandler { clbk ->
-        val editMessageText = EditMessageText.builder()
-            .chatId(clbk.chatId)
-            .messageId(clbk.msgId)
-            .text("Основная валюта: ${clbk.data}")
-            .build()
-        client.execute(editMessageText)
-
+        msgService.edit(clbk.msgId, "$GLOBAL_CURRENCY ${clbk.data}")
         userService.save(User(clbk.userId, clbk.data))
-
-        val inlineKeyboardMarkup = InlineKeyboardMarkup(
-            listOf(
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text("Новый счет")
-                        .callbackData("greeting_new_account")
-                        .build()
-                )
-            )
-        )
-        val build = SendMessage.builder()
-            .chatId(clbk.chatId)
-            .text("Еще один шаг - создайте первый счет")
-            .replyMarkup(inlineKeyboardMarkup)
-            .build()
-        client.execute(build)
+        msgService.send(LAST_STEP_CREATE_NEW_ACC, InlineKeyboardButton(NEW_ACCOUNT).id("greeting_new_account"))
     }
 
     @Bean("greeting_new_account")
     fun newAccountClbk() = CallbackHandler { clbk ->
-        val editMessageText = EditMessageText.builder()
-            .chatId(clbk.chatId)
-            .messageId(clbk.msgId)
-            .text("Введите название счета")
-            .build()
-        client.execute(editMessageText)
+        msgService.edit(clbk.msgId, WRITE_ACC_NAME)
         ContextHolder.current[clbk.chatId] = GreetingNewAccountContext(clbk.msgId)
     }
 
     @Bean("greeting_account_name_msg")
     fun accountName() = TextMessageHandler { msg ->
-
-        val context = ContextHolder.current[msg.chatId]
-        if (context !is GreetingNewAccountContext || context.name != null) return@TextMessageHandler
-
-        val editMessageText = EditMessageText.builder()
-            .chatId(msg.chatId)
-            .messageId(context.baseMsgId)
-            .text("Название счета: ${msg.text}\nВыберите валюту счета")
-            .replyMarkup(
-                currencyService
-                    .getCurrenciesKeyboard("greeting_account_currency")
-                    .addBackButton("greeting_new_account")
-            )
-            .build()
-        client.execute(editMessageText)
-        client.execute(DeleteMessage(msg.chatId.toString(), msg.msgId))
-
+        val context: GreetingNewAccountContext? = ContextHolder.current()
+        if (context == null || context.name != null) return@TextMessageHandler
         context.name = msg.text
+
+        msgService.delete(msg.msgId)
+        msgService.edit(
+            context.baseMsgId,
+            ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
+            currencyService
+                .getKeyboard("greeting_account_currency")
+                .withRow(InlineKeyboardButton(BACK).id("greeting_new_account"))
+        )
     }
 
     @Bean("greeting_account_currency")
     fun accountCurrencyClbk() = CallbackHandler { clbk ->
-
-        val context = ContextHolder.current[clbk.chatId]
-        if (context !is GreetingNewAccountContext || context.currency != null) return@CallbackHandler
-        val inlineKeyboardMarkup = InlineKeyboardMarkup(
-            mutableListOf(
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text("Подтвердить")
-                        .callbackData("greeting_complete_account_creation")
-                        .build()
-                )
-            )
-        ).addBackButton("greeting_new_account")
-        val editMessageText = EditMessageText.builder()
-            .chatId(clbk.chatId)
-            .messageId(clbk.msgId)
-            .text(
-                "Название счета: ${context.name}\n" +
-                        "Валюта: ${clbk.data}"
-            )
-            .replyMarkup(inlineKeyboardMarkup)
-            .build()
-        client.execute(editMessageText)
-
+        val context: GreetingNewAccountContext? = ContextHolder.current()
+        if (context == null || context.currency != null) return@CallbackHandler
         context.currency = clbk.data
+
+        msgService.edit(
+            clbk.msgId,
+            SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
+            mutableListOf(
+                InlineKeyboardRow(InlineKeyboardButton(CONFIRM).id("greeting_complete_account_creation"))
+            ).withRow(InlineKeyboardButton(BACK).id("greeting_new_account"))
+        )
     }
 
     @Bean("greeting_complete_account_creation")
     fun completeAccountCreationClbk() = CallbackHandler { clbk ->
+        msgService.delete(clbk.msgId)
 
-        client.execute(DeleteMessage(clbk.chatId.toString(), clbk.msgId))
-
-        val msg = SendMessage.builder()
-            .chatId(clbk.chatId)
-            .text(
-                "Ваш первый счет создан, теперь можно приступать к работе!\n" +
-                        "Можете начать с создания дополнительных счетов, настроить категории под себя или сразу приступить к вводу доходов и расходов, используя соответствующие кнопки меню"
-            )
-            .replyMarkup(MenuConfig.FULL)
-            .build()
-        client.execute(msg)
-        val accountContext = ContextHolder.current[clbk.chatId] as GreetingNewAccountContext
+        msgService.send(END_GREETING_TEXT, *MenuConfig.FULL.toTypedArray())
+        val accountContext: GreetingNewAccountContext = ContextHolder.current()!!
         accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
         ContextHolder.current.remove(clbk.chatId)
+    }
+
+    companion object {
+        const val USE_MENU_FOR_NAVIGATION = "Используйте кнопки меню для навигации"
+        const val SELECT_CURRENCY = "greeting.please.select.currency"
+        const val FEW_STEPS = "greeting.few.steps"
+        const val LAST_STEP_CREATE_NEW_ACC = "Еще один шаг - создайте первый счет"
+        const val GLOBAL_CURRENCY = "Основная валюта:"
+        const val NEW_ACCOUNT = "Новый счет"
+        const val BACK = "Назад"
+        const val CONFIRM = "Подтвердить"
+        const val WRITE_ACC_NAME = "Введите название счета"
+        const val ACC_NAME_CHOOSE_CURRENCY = "Название счета: %s\nВыберите валюту счета"
+        const val SCHOOSED_NAME_AND_CURRENCY = "Название счета: %s\nВалюта: %s"
+        const val END_GREETING_TEXT = "Ваш первый счет создан, теперь можно приступать к работе!\n" +
+                "Можете начать с создания дополнительных счетов, настроить категории под себя или сразу приступить к " +
+                "вводу доходов и расходов, используя соответствующие кнопки меню"
     }
 
 }

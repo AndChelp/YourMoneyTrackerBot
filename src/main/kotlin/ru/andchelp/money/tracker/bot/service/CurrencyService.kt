@@ -1,11 +1,12 @@
 package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import ru.andchelp.money.tracker.bot.client.OpenExchangeClient
 import ru.andchelp.money.tracker.bot.config.BotProperties
+import ru.andchelp.money.tracker.bot.data
+import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.model.CurrencyExchangeRate
 import ru.andchelp.money.tracker.bot.repository.CurrencyExchangeRateRepository
 import ru.andchelp.money.tracker.bot.repository.CurrencyRepository
@@ -32,24 +33,19 @@ class CurrencyService(
         exchangeRateRepository.saveAll(map)
     }
 
-    fun getCurrenciesKeyboard(clbkHandlerName: String): InlineKeyboardMarkup {
-
-        return currencyRepository.findAll().chunked(3).map { chunk ->
-            val let = chunk.map {
-                InlineKeyboardButton.builder()
-                    .text("${it.code} ${it.symbol}")
-                    .callbackData("$clbkHandlerName:${it.code}")
-                    .build()
+    fun getKeyboard(id: String): MutableList<InlineKeyboardRow> =
+        currencyRepository.findAll().chunked(3) { chunk ->
+            chunk.map {
+                InlineKeyboardButton("${it.code} ${it.symbol}").id(id).data(it.code!!)
             }.let { InlineKeyboardRow(it) }
-            let
-        }.let { InlineKeyboardMarkup(it) }
-    }
+        }.toMutableList()
+
 
     fun convert(sum: Double, baseCurrencyCode: String, rateCurrencyCode: String): Double {
         val sumBD = BigDecimal.valueOf(sum).setScale(2, RoundingMode.HALF_EVEN)
         val rate =
             exchangeRateRepository.findByCurrencies(baseCurrencyCode, rateCurrencyCode)?.rate
-        if (rate == null){
+        if (rate == null) {
             val usdToBaseRate = exchangeRateRepository.findByCurrencies("USD", baseCurrencyCode)!!.rate!!
             val usdToRateRate = exchangeRateRepository.findByCurrencies("USD", rateCurrencyCode)!!.rate!!
 

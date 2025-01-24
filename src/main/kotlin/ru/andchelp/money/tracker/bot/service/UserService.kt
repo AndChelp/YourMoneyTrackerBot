@@ -15,4 +15,8 @@ class UserService(private val userRepository: UserRepository) {
         return userRepository.findById(id).orElseThrow()
     }
 
+    fun userExists(id: Long): Boolean {
+        return userRepository.existsById(id)
+    }
+
 }

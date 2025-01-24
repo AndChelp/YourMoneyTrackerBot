@@ -9,6 +9,7 @@ import ru.andchelp.money.tracker.bot.infra.consumer.GlobalConsumer
 class ConsumerDispatcher(val globalConsumers: List<GlobalConsumer>) : LongPollingSingleThreadUpdateConsumer {
 
     override fun consume(update: Update) {
+        ContextHolder.chatId.set(update.message?.from?.id?:update.callbackQuery.from.id)
         globalConsumers
             .first { it.canConsume(update) }
             .consume(update)
