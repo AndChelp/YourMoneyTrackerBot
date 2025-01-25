@@ -8,6 +8,10 @@ class ContextHolder {
         val chatId: ThreadLocal<Long> = ThreadLocal()
         val current: ConcurrentHashMap<Long, Context> = ConcurrentHashMap()
 
+        fun removeContext() {
+            current.remove(chatId.get())
+        }
+
         inline fun <reified T : Context> current(): T? {
             val context = current[chatId.get()]
             if (context is T) {
@@ -20,10 +24,27 @@ class ContextHolder {
 }
 
 
-interface Context
+open class Context(val baseMsgId: Int, var handlerId: String)
 
-class GreetingContext : Context
-data class GreetingNewAccountContext(val baseMsgId: Int, var currency: String? = null, var name: String? = null) :
-    Context
+class GreetingNewAccountContext(
+    baseMsgId: Int,
+    handlerId: String,
+    var currency: String? = null,
+    var name: String? = null
+) : Context(baseMsgId, handlerId)
 
-data class NewAccountContext(val baseMsgId: Int, var currency: String? = null, var name: String? = null) : Context
+
+class NewAccountContext(
+    baseMsgId: Int,
+    handlerId: String,
+    var currency: String? = null,
+    var name: String? = null
+) : Context(baseMsgId, handlerId)
+
+class NewCategoryContext(
+    baseMsgId: Int,
+    handlerId: String,
+    var type: CashFlowType? = null,
+    var name: String? = null,
+    var parentCategory: Long? = null
+) : Context(baseMsgId, handlerId)

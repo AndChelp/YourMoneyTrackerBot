@@ -6,7 +6,7 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.andchelp.money.tracker.bot.infra.ConsumerDispatcher
+import ru.andchelp.money.tracker.bot.infra.consumer.ConsumerDispatcher
 
 
 @Configuration

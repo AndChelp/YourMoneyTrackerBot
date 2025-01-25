@@ -7,8 +7,8 @@ import ru.andchelp.money.tracker.bot.repository.UserRepository
 @Service
 class UserService(private val userRepository: UserRepository) {
 
-    fun save(user: User) {
-        userRepository.save(user)
+    fun save(user: User): User {
+        return userRepository.save(user)
     }
 
     fun findById(id: Long): User {

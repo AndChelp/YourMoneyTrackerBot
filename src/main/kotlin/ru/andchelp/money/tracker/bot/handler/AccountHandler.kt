@@ -5,7 +5,8 @@ import org.springframework.context.annotation.Configuration
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
-import ru.andchelp.money.tracker.bot.handler.type.TextMessageHandler
+import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
+import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
 import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import ru.andchelp.money.tracker.bot.infra.NewAccountContext
@@ -23,8 +24,8 @@ class AccountHandler(
     private val msgService: MessageService,
 ) {
     @Bean("account_menu_clicked")
-    fun accountMenu() = TextMessageHandler { msg ->
-        if (msg.text != "Счета" || ContextHolder.current[msg.chatId] != null) return@TextMessageHandler
+    fun accountMenu() = GeneralTextMessageHandler { msg ->
+        if (msg.text != "Счета") return@GeneralTextMessageHandler
 
         val newAccKeyboard = InlineKeyboardButton(NEW_ACCOUNT).id("new_account")
         val accountsKeyboard = accountService.getKeyboard(msg.userId)
@@ -41,13 +42,12 @@ class AccountHandler(
     @Bean("new_account")
     fun newAccount() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, WRITE_ACC_NAME)
-        ContextHolder.current[clbk.chatId] = NewAccountContext(clbk.msgId)
+        ContextHolder.current[clbk.chatId] = NewAccountContext(clbk.msgId, "account_name_msg")
     }
 
     @Bean("account_name_msg")
-    fun accountName() = TextMessageHandler { msg ->
-        val context: NewAccountContext? = ContextHolder.current()
-        if (!(context != null && context.name == null)) return@TextMessageHandler
+    fun accountName() = ContextualTextMessageHandler { msg ->
+        val context: NewAccountContext = ContextHolder.current()!!
 
         msgService.edit(
             context.baseMsgId,
@@ -62,8 +62,7 @@ class AccountHandler(
 
     @Bean("account_currency")
     fun accountCurrencyClbk() = CallbackHandler { clbk ->
-        val context: NewAccountContext? = ContextHolder.current()
-        if (!(context != null && context.currency == null)) return@CallbackHandler
+        val context: NewAccountContext = ContextHolder.current()!!
         context.currency = clbk.data
 
         msgService.edit(

@@ -55,6 +55,16 @@ class MessageService(
         )
     }
 
+    fun send(text: String, keyboard: InlineKeyboardMarkup) {
+        telegramClient.execute(
+            SendMessage.builder()
+                .chatId(ContextHolder.chatId.get())
+                .text(msgFor(text))
+                .replyMarkup(keyboard)
+                .build()
+        )
+    }
+
     fun send(text: String, button: InlineKeyboardButton) {
         send(text, InlineKeyboardRow(button))
     }
@@ -62,6 +72,23 @@ class MessageService(
     fun send(text: String, vararg button: InlineKeyboardRow) {
         send(text, listOf(*button))
     }
+
+
+    fun edit(msgId: Int, text: String, vararg button: InlineKeyboardRow) {
+        edit(msgId, text, listOf(*button))
+    }
+
+    fun edit(msgId: Int, text: String, keyboard: InlineKeyboardMarkup?) {
+        telegramClient.execute(
+            EditMessageText.builder()
+                .chatId(ContextHolder.chatId.get())
+                .messageId(msgId)
+                .text(msgFor(text))
+                .replyMarkup(keyboard)
+                .build()
+        )
+    }
+
 
     fun edit(msgId: Int, text: String, rows: List<InlineKeyboardRow>) {
         telegramClient.execute(

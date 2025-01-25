@@ -7,12 +7,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.andchelp.money.tracker.bot.config.MenuConfig
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.CommandHandler
-import ru.andchelp.money.tracker.bot.handler.type.TextMessageHandler
+import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
 import ru.andchelp.money.tracker.bot.model.User
 import ru.andchelp.money.tracker.bot.service.AccountService
+import ru.andchelp.money.tracker.bot.service.CategoryService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.UserService
@@ -23,7 +24,8 @@ class GreetingHandler(
     private val currencyService: CurrencyService,
     private val msgService: MessageService,
     private val userService: UserService,
-    private val accountService: AccountService
+    private val accountService: AccountService,
+    private val categoryService: CategoryService
 ) {
 
     @Bean("/start")
@@ -39,20 +41,20 @@ class GreetingHandler(
     @Bean("global_currency")
     fun currencyClbk() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, "$GLOBAL_CURRENCY ${clbk.data}")
-        userService.save(User(clbk.userId, clbk.data))
+        val user = userService.save(User(clbk.userId, clbk.data))
+        categoryService.addDefaultCategories(user)
         msgService.send(LAST_STEP_CREATE_NEW_ACC, InlineKeyboardButton(NEW_ACCOUNT).id("greeting_new_account"))
     }
 
     @Bean("greeting_new_account")
     fun newAccountClbk() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, WRITE_ACC_NAME)
-        ContextHolder.current[clbk.chatId] = GreetingNewAccountContext(clbk.msgId)
+        ContextHolder.current[clbk.chatId] = GreetingNewAccountContext(clbk.msgId, "greeting_account_name_msg")
     }
 
     @Bean("greeting_account_name_msg")
-    fun accountName() = TextMessageHandler { msg ->
-        val context: GreetingNewAccountContext? = ContextHolder.current()
-        if (context == null || context.name != null) return@TextMessageHandler
+    fun accountName() = ContextualTextMessageHandler { msg ->
+        val context: GreetingNewAccountContext = ContextHolder.current()!!
         context.name = msg.text
 
         msgService.delete(msg.msgId)
@@ -67,8 +69,7 @@ class GreetingHandler(
 
     @Bean("greeting_account_currency")
     fun accountCurrencyClbk() = CallbackHandler { clbk ->
-        val context: GreetingNewAccountContext? = ContextHolder.current()
-        if (context == null || context.currency != null) return@CallbackHandler
+        val context: GreetingNewAccountContext = ContextHolder.current()!!
         context.currency = clbk.data
 
         msgService.edit(
@@ -87,7 +88,7 @@ class GreetingHandler(
         msgService.send(END_GREETING_TEXT, *MenuConfig.FULL.toTypedArray())
         val accountContext: GreetingNewAccountContext = ContextHolder.current()!!
         accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
-        ContextHolder.current.remove(clbk.chatId)
+        ContextHolder.removeContext()
     }
 
     companion object {
