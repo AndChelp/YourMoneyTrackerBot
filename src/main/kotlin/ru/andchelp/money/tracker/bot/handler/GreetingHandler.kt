@@ -2,22 +2,19 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import ru.andchelp.money.tracker.bot.config.MenuConfig
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.CommandHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
-import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
+import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.User
 import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CategoryService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.UserService
-import ru.andchelp.money.tracker.bot.withRow
 
 @Configuration
 class GreetingHandler(
@@ -43,7 +40,7 @@ class GreetingHandler(
         msgService.edit(clbk.msgId, "$GLOBAL_CURRENCY ${clbk.data}")
         val user = userService.save(User(clbk.userId, clbk.data))
         categoryService.addDefaultCategories(user)
-        msgService.send(LAST_STEP_CREATE_NEW_ACC, InlineKeyboardButton(NEW_ACCOUNT).id("greeting_new_account"))
+        msgService.send(LAST_STEP_CREATE_NEW_ACC, MsgKeyboard().row().button(NEW_ACCOUNT, "greeting_new_account"))
     }
 
     @Bean("greeting_new_account")
@@ -61,9 +58,7 @@ class GreetingHandler(
         msgService.edit(
             context.baseMsgId,
             ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
-            currencyService
-                .getKeyboard("greeting_account_currency")
-                .withRow(InlineKeyboardButton(BACK).id("greeting_new_account"))
+            currencyService.getKeyboard("greeting_account_currency").row().button(BACK, "greeting_new_account")
         )
     }
 
@@ -75,9 +70,9 @@ class GreetingHandler(
         msgService.edit(
             clbk.msgId,
             SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
-            mutableListOf(
-                InlineKeyboardRow(InlineKeyboardButton(CONFIRM).id("greeting_complete_account_creation"))
-            ).withRow(InlineKeyboardButton(BACK).id("greeting_new_account"))
+            MsgKeyboard()
+                .row().button(CONFIRM, "greeting_complete_account_creation")
+                .row().button(BACK, "greeting_new_account")
         )
     }
 

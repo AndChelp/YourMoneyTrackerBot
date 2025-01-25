@@ -1,12 +1,9 @@
 package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import ru.andchelp.money.tracker.bot.client.OpenExchangeClient
 import ru.andchelp.money.tracker.bot.config.BotProperties
-import ru.andchelp.money.tracker.bot.data
-import ru.andchelp.money.tracker.bot.id
+import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.CurrencyExchangeRate
 import ru.andchelp.money.tracker.bot.repository.CurrencyExchangeRateRepository
 import ru.andchelp.money.tracker.bot.repository.CurrencyRepository
@@ -33,13 +30,16 @@ class CurrencyService(
         exchangeRateRepository.saveAll(map)
     }
 
-    fun getKeyboard(id: String): MutableList<InlineKeyboardRow> =
+    fun getKeyboard(id: String): MsgKeyboard {
+        val keyboard = MsgKeyboard()
         currencyRepository.findAll().chunked(3) { chunk ->
+            keyboard.row()
             chunk.map {
-                InlineKeyboardButton("${it.code} ${it.symbol}").id(id).data(it.code!!)
-            }.let { InlineKeyboardRow(it) }
-        }.toMutableList()
-
+                keyboard.button("${it.code} ${it.symbol}", id, it.code!!)
+            }
+        }
+        return keyboard
+    }
 
     fun convert(sum: Double, baseCurrencyCode: String, rateCurrencyCode: String): Double {
         val sumBD = BigDecimal.valueOf(sum).setScale(2, RoundingMode.HALF_EVEN)

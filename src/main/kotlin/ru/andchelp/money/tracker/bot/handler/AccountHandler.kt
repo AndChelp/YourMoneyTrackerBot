@@ -2,19 +2,16 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
-import ru.andchelp.money.tracker.bot.id
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
+import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.infra.NewAccountContext
 import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.UserService
-import ru.andchelp.money.tracker.bot.withRow
 
 @Configuration
 class AccountHandler(
@@ -27,14 +24,13 @@ class AccountHandler(
     fun accountMenu() = GeneralTextMessageHandler { msg ->
         if (msg.text != "Счета") return@GeneralTextMessageHandler
 
-        val newAccKeyboard = InlineKeyboardButton(NEW_ACCOUNT).id("new_account")
         val accountsKeyboard = accountService.getKeyboard(msg.userId)
-        if (accountsKeyboard.isEmpty()) {
-            msgService.send(YOU_DONT_HAVE_ACC_CREATE_NEW, newAccKeyboard)
+        if (accountsKeyboard.keyboard.isEmpty()) {
+            msgService.send(YOU_DONT_HAVE_ACC_CREATE_NEW, MsgKeyboard().row().button(NEW_ACCOUNT, "new_account"))
         } else {
             val totalBalance = accountService.calcTotalBalance(msg.userId)
             val globalUserCurrency = userService.findById(msg.userId).totalBalanceCurrency
-            accountsKeyboard.withRow(newAccKeyboard)
+            accountsKeyboard.row().button(NEW_ACCOUNT, "new_account")
             msgService.send(GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency), accountsKeyboard)
         }
     }
@@ -52,9 +48,7 @@ class AccountHandler(
         msgService.edit(
             context.baseMsgId,
             ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
-            currencyService
-                .getKeyboard("account_currency")
-                .withRow(InlineKeyboardButton(GreetingHandler.BACK).id("new_account"))
+            currencyService.getKeyboard("account_currency").row().button(GreetingHandler.BACK, "new_account")
         )
         msgService.delete(msg.msgId)
         context.name = msg.text
@@ -68,9 +62,9 @@ class AccountHandler(
         msgService.edit(
             clbk.msgId,
             SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
-            mutableListOf(
-                InlineKeyboardRow(InlineKeyboardButton(GreetingHandler.CONFIRM).id("complete_account_creation"))
-            ).withRow(InlineKeyboardButton(GreetingHandler.BACK).id("new_account"))
+            MsgKeyboard()
+                .row().button(GreetingHandler.CONFIRM, "complete_account_creation")
+                .row().button(GreetingHandler.BACK, "new_account")
         )
     }
 
@@ -83,8 +77,7 @@ class AccountHandler(
         val totalBalance = accountService.calcTotalBalance(clbk.userId)
         val userGlobalCurrency = userService.findById(clbk.userId).totalBalanceCurrency
 
-        val accountsKeyboard = accountService.getKeyboard(clbk.userId)
-            .withRow(InlineKeyboardButton(GreetingHandler.NEW_ACCOUNT).id("new_account"))
+        val accountsKeyboard = accountService.getKeyboard(clbk.userId).row().button(NEW_ACCOUNT, "new_account")
 
         msgService.edit(clbk.msgId, GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, userGlobalCurrency), accountsKeyboard)
 

@@ -1,8 +1,7 @@
 package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
 import ru.andchelp.money.tracker.bot.model.AccountBalance
 import ru.andchelp.money.tracker.bot.repository.AccountBalanceRepository
@@ -41,15 +40,12 @@ class AccountService(
             .reduce { a, b -> a + b }
     }
 
-    fun getKeyboard(userId: Long): MutableList<InlineKeyboardRow> =
+    fun getKeyboard(userId: Long): MsgKeyboard {
+        val keyboard = MsgKeyboard()
         findAccounts(userId).map {
-            InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                    .text("${it.name} - ${it.balance!!.balance} ${it.currencyCode}")
-                    .callbackData("account_clbk:${it.id}")
-                    .build()
-            )
-        }.toMutableList()
-
+            keyboard.row().button("${it.name} - ${it.balance!!.balance} ${it.currencyCode}", "account_clbk:${it.id}")
+        }
+        return keyboard
+    }
 
 }
