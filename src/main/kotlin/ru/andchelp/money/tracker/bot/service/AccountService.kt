@@ -1,6 +1,7 @@
 package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
 import ru.andchelp.money.tracker.bot.model.AccountBalance
@@ -14,6 +15,22 @@ class AccountService(
     private val userService: UserService,
     private val currencyService: CurrencyService
 ) {
+
+    @Transactional
+    fun delete(id: Long) {
+        accountRepository.deleteById(id)
+        accountBalanceRepository.deleteById(id)
+    }
+
+    fun save(account: Account) {
+        accountRepository.save(account)
+    }
+
+    fun findById(id: Long): Account {
+        return accountRepository.findById(id).orElseThrow()
+    }
+
+    @Transactional
     fun newAccount(userId: Long, accountName: String, currency: String) {
         val balance = accountBalanceRepository.save(AccountBalance())
         val user = userService.findById(userId)
@@ -31,8 +48,7 @@ class AccountService(
             .map {
                 val balance = it.balance!!.balance
                 if (it.currencyCode != globalCurrencyCode) {
-                    val convert = currencyService.convert(balance, it.currencyCode!!, globalCurrencyCode!!)
-                    convert
+                    currencyService.convert(balance, it.currencyCode!!, globalCurrencyCode!!)
                 } else {
                     balance
                 }
@@ -40,10 +56,10 @@ class AccountService(
             .reduce { a, b -> a + b }
     }
 
-    fun getKeyboard(userId: Long): MsgKeyboard {
+    fun getKeyboard(userId: Long, callbackId: String): MsgKeyboard {
         val keyboard = MsgKeyboard()
-        findAccounts(userId).map {
-            keyboard.row().button("${it.name} - ${it.balance!!.balance} ${it.currencyCode}", "account_clbk:${it.id}")
+        findAccounts(userId).sortedBy { it.id }.map {
+            keyboard.row().button("${it.name} - ${it.balance!!.balance} ${it.currencyCode}", callbackId, it.id)
         }
         return keyboard
     }

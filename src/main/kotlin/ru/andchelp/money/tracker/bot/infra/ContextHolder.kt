@@ -24,26 +24,33 @@ class ContextHolder {
 }
 
 
-open class Context(val baseMsgId: Int, var handlerId: String)
+open class Context(val baseMsgId: Int, var handlerId: String?)
 
 class GreetingNewAccountContext(
     baseMsgId: Int,
-    handlerId: String,
+    handlerId: String? = null,
     var currency: String? = null,
     var name: String? = null
 ) : Context(baseMsgId, handlerId)
 
+class EditAccountContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+    var accountId: Long? = null,
+    var currency: String? = null,
+    var name: String? = null
+) : Context(baseMsgId, handlerId)
 
 class NewAccountContext(
     baseMsgId: Int,
-    handlerId: String,
+    handlerId: String? = null,
     var currency: String? = null,
     var name: String? = null
 ) : Context(baseMsgId, handlerId)
 
 class NewCategoryContext(
     baseMsgId: Int,
-    handlerId: String,
+    handlerId: String? = null,
     var type: CashFlowType? = null,
     var name: String? = null,
     var parentCategory: Long? = null

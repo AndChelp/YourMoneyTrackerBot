@@ -79,10 +79,10 @@ class CategoryHandler(
         val subcategoriesKeyboard = categoryService
             .getSubcategoriesKeyboard(categoryId, "subcategory")
             .row()
-            .button("Удалить", "delete_category", categoryId.toString())
+            .button("Удалить", "delete_category", categoryId)
             .row()
             .button("<< Назад", "root_categories", category.type!!.name)
-            .button("+ Добавить", "add_subcategory", categoryId.toString())
+            .button("+ Добавить", "add_subcategory", categoryId)
 
         msgService.edit(msgId, "Управление категорией \"${category.name}\"", subcategoriesKeyboard)
     }
@@ -98,7 +98,7 @@ class CategoryHandler(
             .row()
             .button("Удалить", "delete_category", categoryIdStr)
             .row()
-            .button("<< Назад", "subcategories", category.parenCategory!!.id.toString())
+            .button("<< Назад", "subcategories", category.parenCategory!!.id)
         msgService.edit(clbk.msgId, "Управление подкатегорией \"${category.name}\"", keyboard)
 
     }
@@ -123,7 +123,7 @@ class CategoryHandler(
         msgService.edit(
             clbk.msgId,
             "Введите название подкатегории для категории ${category.name}",
-            MsgKeyboard().row().button("<< Назад", "subcategories", category.id.toString())
+            MsgKeyboard().row().button("<< Назад", "subcategories", category.id)
         )
         ContextHolder.current[clbk.chatId] =
             NewCategoryContext(
@@ -141,7 +141,7 @@ class CategoryHandler(
         msgService.delete(msg.msgId)
         msgService.edit(
             context.baseMsgId, "Название новой подкатегории: \"${msg.text}\"", MsgKeyboard().row()
-                .button("<< Назад", "subcategories", context.parentCategory.toString())
+                .button("<< Назад", "subcategories", context.parentCategory)
                 .button("Подтвердить", "save_category")
         )
 

@@ -72,7 +72,7 @@ class CategoryService(
         val msgKeyboard = MsgKeyboard()
         categories.chunked(2).forEach {
             val withNewRow = msgKeyboard.row()
-            it.forEach { category -> withNewRow.button(category.name!!, clbkId, "${category.id!!}") }
+            it.forEach { category -> withNewRow.button(category.name!!, clbkId, category.id) }
         }
         return msgKeyboard
     }

@@ -12,7 +12,7 @@ class MsgKeyboard : InlineKeyboardMarkup(mutableListOf()) {
         return this
     }
 
-    fun button(text: String, id: String, data: String? = null): MsgKeyboard {
+    fun button(text: String, id: String, data: Any? = null): MsgKeyboard {
         val button = InlineKeyboardButton(text)
         button.callbackData = data?.let { "$id:$data" } ?: id
 

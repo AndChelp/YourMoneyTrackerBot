@@ -35,7 +35,7 @@ class CurrencyService(
         currencyRepository.findAll().chunked(3) { chunk ->
             keyboard.row()
             chunk.map {
-                keyboard.button("${it.code} ${it.symbol}", id, it.code!!)
+                keyboard.button("${it.code} ${it.symbol}", id, it.code)
             }
         }
         return keyboard

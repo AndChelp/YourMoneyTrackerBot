@@ -17,10 +17,10 @@ data class Account(
     val id: Long? = null,
     @ManyToOne
     val user: User? = null,
-    val name: String? = null,
-    val currencyCode: String? = null,
+    var name: String? = null,
+    var currencyCode: String? = null,
     val creationDate: LocalDateTime = LocalDateTime.now(),
-    val allowInTotalBalance: Boolean = true,
+    var allowInTotalBalance: Boolean = true,
 
     @OneToOne
     val balance: AccountBalance? = null
