@@ -41,19 +41,16 @@ class CurrencyService(
         return keyboard
     }
 
-    fun convert(sum: Double, baseCurrencyCode: String, rateCurrencyCode: String): Double {
-        val sumBD = BigDecimal.valueOf(sum).setScale(2, RoundingMode.HALF_EVEN)
-        val rate =
-            exchangeRateRepository.findByCurrencies(baseCurrencyCode, rateCurrencyCode)?.rate
-        if (rate == null) {
-            val usdToBaseRate = exchangeRateRepository.findByCurrencies("USD", baseCurrencyCode)!!.rate!!
-            val usdToRateRate = exchangeRateRepository.findByCurrencies("USD", rateCurrencyCode)!!.rate!!
+    fun convert(sum: BigDecimal, baseCurrencyCode: String, rateCurrencyCode: String): BigDecimal {
+        val sumBD = sum.setScale(2, RoundingMode.HALF_EVEN)
+        val rate = exchangeRateRepository.findByCurrencies(baseCurrencyCode, rateCurrencyCode)?.rate
+        if (rate != null)
+            return sumBD.multiply(BigDecimal(rate)).setScale(2, RoundingMode.HALF_EVEN)
 
-            val baseToUsd = sumBD.multiply(BigDecimal(1.0 / usdToBaseRate)).setScale(2, RoundingMode.HALF_EVEN)
-            return baseToUsd.multiply(BigDecimal(usdToRateRate)).setScale(2, RoundingMode.HALF_EVEN).toDouble()
-        }
-        val rateBD = BigDecimal.valueOf(rate).setScale(2, RoundingMode.HALF_EVEN)
-        return sumBD.multiply(rateBD).setScale(2, RoundingMode.HALF_EVEN).toDouble()
+        val usdToBaseRate = exchangeRateRepository.findByCurrencies("USD", baseCurrencyCode)!!.rate!!
+        val usdToRateRate = exchangeRateRepository.findByCurrencies("USD", rateCurrencyCode)!!.rate!!
+        return sumBD.divide(BigDecimal(usdToBaseRate), 2, RoundingMode.HALF_EVEN)
+            .multiply(BigDecimal(usdToRateRate)).setScale(2, RoundingMode.HALF_EVEN)
     }
 }
 

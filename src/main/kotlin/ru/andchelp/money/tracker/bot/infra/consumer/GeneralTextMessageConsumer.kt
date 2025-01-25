@@ -18,7 +18,7 @@ class GeneralTextMessageConsumer(
 ) : GlobalConsumer {
     override fun canConsume(update: Update): Boolean {
         val context: Context? = ContextHolder.current()
-        return context == null && update.hasMessage() && update.message.hasText()
+        return context?.handlerId == null && update.hasMessage() && update.message.hasText()
     }
 
     override fun consume(update: Update) {

@@ -5,10 +5,9 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
@@ -24,7 +23,6 @@ class MessageService(
     private fun msgFor(code: String): String {
         return messageSource.getMessage(code, null, Locale.ENGLISH)
     }
-
 
     fun send(text: String) {
         telegramClient.execute(
@@ -45,37 +43,14 @@ class MessageService(
         )
     }
 
-    fun send(text: String, rows: List<InlineKeyboardRow>) {
-        telegramClient.execute(
-            SendMessage.builder()
-                .chatId(ContextHolder.chatId.get())
-                .text(msgFor(text))
-                .replyMarkup(InlineKeyboardMarkup(rows))
-                .build()
-        )
-    }
-
-    fun send(text: String, keyboard: InlineKeyboardMarkup) {
-        telegramClient.execute(
+    fun send(text: String, keyboard: InlineKeyboardMarkup): Message {
+        return telegramClient.execute(
             SendMessage.builder()
                 .chatId(ContextHolder.chatId.get())
                 .text(msgFor(text))
                 .replyMarkup(keyboard)
                 .build()
         )
-    }
-
-    fun send(text: String, button: InlineKeyboardButton) {
-        send(text, InlineKeyboardRow(button))
-    }
-
-    fun send(text: String, vararg button: InlineKeyboardRow) {
-        send(text, listOf(*button))
-    }
-
-
-    fun edit(msgId: Int, text: String, vararg button: InlineKeyboardRow) {
-        edit(msgId, text, listOf(*button))
     }
 
     fun edit(msgId: Int, text: String, keyboard: InlineKeyboardMarkup?) {
@@ -89,17 +64,6 @@ class MessageService(
         )
     }
 
-
-    fun edit(msgId: Int, text: String, rows: List<InlineKeyboardRow>) {
-        telegramClient.execute(
-            EditMessageText.builder()
-                .chatId(ContextHolder.chatId.get())
-                .messageId(msgId)
-                .text(msgFor(text))
-                .replyMarkup(InlineKeyboardMarkup(rows))
-                .build()
-        )
-    }
 
     fun edit(msgId: Int, text: String) {
         telegramClient.execute(

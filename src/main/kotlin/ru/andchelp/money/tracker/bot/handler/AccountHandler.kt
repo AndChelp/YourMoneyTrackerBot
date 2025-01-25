@@ -114,7 +114,7 @@ class AccountHandler(
         val account = accountService.findById(clbk.data.toLong())
         msgService.edit(
             clbk.msgId, "Счет ${account.name}\n" +
-                    "Баланс: ${account.balance!!.balance}\n" +
+                    "Баланс: ${account.balance}\n" +
                     "Валюта: ${account.currencyCode}\n" +
                     "Учитывать в общем балансе: ${if (account.allowInTotalBalance) "+" else "-"}\n" +
                     "Дата создания: ${account.creationDate.toLocalDate()}",

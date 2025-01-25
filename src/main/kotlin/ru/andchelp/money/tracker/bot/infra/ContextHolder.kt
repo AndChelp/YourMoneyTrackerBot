@@ -1,5 +1,6 @@
 package ru.andchelp.money.tracker.bot.infra
 
+import ru.andchelp.money.tracker.bot.model.Operation
 import java.util.concurrent.ConcurrentHashMap
 
 class ContextHolder {
@@ -54,4 +55,10 @@ class NewCategoryContext(
     var type: CashFlowType? = null,
     var name: String? = null,
     var parentCategory: Long? = null
+) : Context(baseMsgId, handlerId)
+
+class NewOperationContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+    var operation: Operation
 ) : Context(baseMsgId, handlerId)
