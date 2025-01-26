@@ -1,6 +1,7 @@
 package ru.andchelp.money.tracker.bot.infra
 
 import ru.andchelp.money.tracker.bot.model.Operation
+import ru.andchelp.money.tracker.bot.service.OperationFilter
 import java.util.concurrent.ConcurrentHashMap
 
 class ContextHolder {
@@ -61,4 +62,10 @@ class NewOperationContext(
     baseMsgId: Int,
     handlerId: String? = null,
     var operation: Operation
+) : Context(baseMsgId, handlerId)
+
+class OperationFilterContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+    val operationFilter: OperationFilter
 ) : Context(baseMsgId, handlerId)

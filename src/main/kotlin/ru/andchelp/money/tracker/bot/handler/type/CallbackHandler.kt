@@ -17,7 +17,7 @@ data class CallbackUpdate(
         update.callbackQuery.message.chatId,
         update.callbackQuery.message.messageId,
         update.callbackQuery.from.id,
-        update.callbackQuery.data.substringAfter(':'),
+        update.callbackQuery.data.substringAfter(':', ""),
         update
     )
 }

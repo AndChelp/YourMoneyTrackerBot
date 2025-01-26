@@ -9,7 +9,6 @@ import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import ru.andchelp.money.tracker.bot.infra.GreetingNewAccountContext
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
-import ru.andchelp.money.tracker.bot.model.User
 import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CategoryService
 import ru.andchelp.money.tracker.bot.service.CurrencyService
@@ -38,7 +37,7 @@ class GreetingHandler(
     @Bean("global_currency")
     fun currencyClbk() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, "$GLOBAL_CURRENCY ${clbk.data}")
-        val user = userService.save(User(clbk.userId, clbk.data))
+        val user = userService.save(clbk.userId, clbk.data)
         categoryService.addDefaultCategories(user)
         msgService.send(LAST_STEP_CREATE_NEW_ACC, MsgKeyboard().row().button(NEW_ACCOUNT, "greeting_new_account"))
     }

@@ -30,7 +30,7 @@ class AccountHandler(
             msgService.send(YOU_DONT_HAVE_ACC_CREATE_NEW, MsgKeyboard().row().button(NEW_ACCOUNT, "new_account"))
         } else {
             val totalBalance = accountService.calcTotalBalance(msg.userId)
-            val globalUserCurrency = userService.findById(msg.userId).totalBalanceCurrency
+            val globalUserCurrency = userService.findById(msg.userId).globalCurrency!!.symbol
             accountsKeyboard.row().button(NEW_ACCOUNT, "new_account")
             msgService.send(GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency), accountsKeyboard)
         }
@@ -47,7 +47,7 @@ class AccountHandler(
             )
         } else {
             val totalBalance = accountService.calcTotalBalance(clbk.userId)
-            val globalUserCurrency = userService.findById(clbk.userId).totalBalanceCurrency
+            val globalUserCurrency = userService.findById(clbk.userId).globalCurrency!!.symbol
             accountsKeyboard.row().button(NEW_ACCOUNT, "new_account")
             msgService.edit(
                 clbk.msgId,
@@ -97,7 +97,7 @@ class AccountHandler(
         accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
 
         val totalBalance = accountService.calcTotalBalance(clbk.userId)
-        val userGlobalCurrency = userService.findById(clbk.userId).totalBalanceCurrency
+        val userGlobalCurrency = userService.findById(clbk.userId).globalCurrency!!.symbol
 
         val accountsKeyboard = accountService.getKeyboard(clbk.userId, "account_info")
             .row().button(NEW_ACCOUNT, "new_account")
@@ -114,8 +114,8 @@ class AccountHandler(
         val account = accountService.findById(clbk.data.toLong())
         msgService.edit(
             clbk.msgId, "Счет ${account.name}\n" +
-                    "Баланс: ${account.balance}\n" +
-                    "Валюта: ${account.currencyCode}\n" +
+                    "Баланс: ${account.balance}${account.currency!!.symbol}\n" +
+                    "Валюта: ${msgService.msgFor(account.currency!!.name!!)}\n" +
                     "Учитывать в общем балансе: ${if (account.allowInTotalBalance) "+" else "-"}\n" +
                     "Дата создания: ${account.creationDate.toLocalDate()}",
             MsgKeyboard()
@@ -137,7 +137,11 @@ class AccountHandler(
             "Изменение параметров счета",
             MsgKeyboard()
                 .row().button("Название: ${account.name}", "change_account_name", account.id)
-                .row().button("Валюта: ${account.currencyCode}", "change_account_currency", account.id)
+                .row().button(
+                    "Валюта: ${msgService.msgFor(account.currency!!.name!!)}",
+                    "change_account_currency",
+                    account.id
+                )
                 .row().button(
                     "Учитывать в общем балансе: ${if (account.allowInTotalBalance) "+" else "-"}\n",
                     "change_allow_in_total_balance", account.id
@@ -186,7 +190,7 @@ class AccountHandler(
     fun changeAccountCurrencyInput() = CallbackHandler { clbk ->
         val context: EditAccountContext = ContextHolder.current()!!
         val account = accountService.findById(context.accountId!!)
-        account.currencyCode = clbk.data
+        account.currency = currencyService.findByCode(clbk.data)
         accountService.save(account)
 
         //todo пересчет валют
@@ -226,7 +230,7 @@ class AccountHandler(
     companion object {
 
         const val YOU_DONT_HAVE_ACC_CREATE_NEW = "У вас еще нет счетов!\nДля создания нового счета нажмите кнопку ниже"
-        const val GLOBAL_BALANCE_YOUR_ACCS = "Общий баланс: %s %s\nВаши счета:"
+        const val GLOBAL_BALANCE_YOUR_ACCS = "Общий баланс: %s%s\nВаши счета:"
 
         const val NEW_ACCOUNT = "Новый счет"
         const val WRITE_ACC_NAME = "Введите название счета"

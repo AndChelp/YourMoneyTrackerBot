@@ -14,6 +14,10 @@ class AccountService(
     private val currencyService: CurrencyService
 ) {
 
+    fun findByIds(ids: Set<Long>): List<Account> {
+        return accountRepository.findAllById(ids)
+    }
+
     fun delete(id: Long) {
         accountRepository.deleteById(id)
     }
@@ -28,7 +32,12 @@ class AccountService(
 
     fun newAccount(userId: Long, accountName: String, currency: String) {
         val user = userService.findById(userId)
-        val account = Account(user = user, name = accountName, currencyCode = currency, balance = BigDecimal.ZERO)
+        val account = Account(
+            user = user,
+            name = accountName,
+            currency = currencyService.findByCode(currency),
+            balance = BigDecimal.ZERO
+        )
         accountRepository.save(account)
     }
 
@@ -37,12 +46,12 @@ class AccountService(
     }
 
     fun calcTotalBalance(userId: Long): BigDecimal {
-        val globalCurrencyCode = userService.findById(userId).totalBalanceCurrency
+        val globalCurrency = userService.findById(userId).globalCurrency
         return accountRepository.findByUserIdAndAllowInTotalBalanceTrue(userId)
             .map {
                 val balance = it.balance
-                if (it.currencyCode != globalCurrencyCode) {
-                    currencyService.convert(balance, it.currencyCode!!, globalCurrencyCode!!)
+                if (it.currency!!.code != globalCurrency!!.code) {
+                    currencyService.convert(balance, it.currency!!.code!!, globalCurrency.code!!)
                 } else {
                     balance
                 }
@@ -53,7 +62,7 @@ class AccountService(
     fun getKeyboard(userId: Long, callbackId: String): MsgKeyboard {
         val keyboard = MsgKeyboard()
         findAccounts(userId).sortedBy { it.id }.map {
-            keyboard.row().button("${it.name}, ${it.balance} ${it.currencyCode}", callbackId, it.id)
+            keyboard.row().button("${it.name}, ${it.balance}${it.currency!!.symbol}", callbackId, it.id)
         }
         return keyboard
     }

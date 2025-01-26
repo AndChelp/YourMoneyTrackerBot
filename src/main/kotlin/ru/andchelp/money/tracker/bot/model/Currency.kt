@@ -5,7 +5,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity
@@ -15,8 +14,6 @@ data class Currency(
     val code: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    @OneToMany(mappedBy = "baseCurrencyCode")
-    val exchangeRates: List<CurrencyExchangeRate>? = null,
 )
 
 @Entity
@@ -25,7 +22,9 @@ data class CurrencyExchangeRate(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    val baseCurrencyCode: String? = null,
-    val rateCurrencyCode: String? = null,
+    @ManyToOne
+    val baseCurrency: Currency? = null,
+    @ManyToOne
+    val rateCurrency: Currency? = null,
     var rate: Double? = null
 )

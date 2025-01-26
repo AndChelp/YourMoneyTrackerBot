@@ -18,7 +18,8 @@ data class Account(
     @ManyToOne
     val user: User? = null,
     var name: String? = null,
-    var currencyCode: String? = null,
+    @ManyToOne
+    var currency: Currency? = null,
     val creationDate: LocalDateTime = LocalDateTime.now(),
     var allowInTotalBalance: Boolean = true,
 

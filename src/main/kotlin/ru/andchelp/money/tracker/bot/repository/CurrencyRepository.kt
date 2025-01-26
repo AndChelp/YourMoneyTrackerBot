@@ -7,10 +7,12 @@ import ru.andchelp.money.tracker.bot.model.Currency
 import ru.andchelp.money.tracker.bot.model.CurrencyExchangeRate
 
 @Repository
-interface CurrencyRepository : JpaRepository<Currency, String>
+interface CurrencyRepository : JpaRepository<Currency, String> {
+    fun findByCode(code: String): Currency
+}
 
 @Repository
 interface CurrencyExchangeRateRepository : JpaRepository<CurrencyExchangeRate, String> {
-    @Query("select a from CurrencyExchangeRate a where a.baseCurrencyCode = ?1 and a.rateCurrencyCode = ?2")
+    @Query("select a from CurrencyExchangeRate a where a.baseCurrency.code = ?1 and a.rateCurrency.code = ?2")
     fun findByCurrencies(baseCurrency: String, rateCurrency: String): CurrencyExchangeRate?
 }

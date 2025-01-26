@@ -76,7 +76,7 @@ class OperationHandler(
         msgService.edit(
             msgId,
             "Добавление операции ${
-                when (operation.type) {
+                when (operation.type!!) {
                     CashFlowType.OUTCOME -> "расхода"
                     CashFlowType.INCOME -> "дохода"
                 }
@@ -139,7 +139,7 @@ class OperationHandler(
             "Выберите категорию или подкатегорию операции",
             categoryService.getRootCategoriesKeyboard(
                 clbk.userId,
-                context.operation.type,
+                context.operation.type!!,
                 "category_for_new_operation"
             ).row().button("Назад", "new_operation_clbk")
         )
@@ -205,9 +205,8 @@ class OperationHandler(
             clbk.msgId, "Добавлена новая операция:\n" +
                     "${operation.account!!.name}, ${operation.category!!.name}, " +
                     (if (operation.type == CashFlowType.INCOME) "+" else "-") +
-                    "${operation.sum} ${operation.account!!.currencyCode}"
+                    "${operation.sum} ${operation.account!!.currency!!.symbol}"
         )
         ContextHolder.removeContext()
-
     }
 }

@@ -34,5 +34,6 @@ interface CategoryRepository : JpaRepository<Category, Long> {
 
     fun findByParenCategoryId(id: Long): List<Category>
 
+    fun findByUserId(userId: Long): List<Category>
 
 }

@@ -5,10 +5,15 @@ import ru.andchelp.money.tracker.bot.model.User
 import ru.andchelp.money.tracker.bot.repository.UserRepository
 
 @Service
-class UserService(private val userRepository: UserRepository) {
+class UserService(private val userRepository: UserRepository, private val currencyService: CurrencyService) {
 
-    fun save(user: User): User {
-        return userRepository.save(user)
+    fun save(userId: Long, globalCurrencyCode: String): User {
+        return userRepository.save(
+            User(
+                id = userId,
+                globalCurrency = currencyService.findByCode(globalCurrencyCode)
+            )
+        )
     }
 
     fun findById(id: Long): User {

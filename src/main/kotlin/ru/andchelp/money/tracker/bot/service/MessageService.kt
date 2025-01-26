@@ -20,7 +20,7 @@ class MessageService(
 ) {
 
 
-    private fun msgFor(code: String): String {
+    fun msgFor(code: String): String {
         return messageSource.getMessage(code, null, Locale.ENGLISH)
     }
 

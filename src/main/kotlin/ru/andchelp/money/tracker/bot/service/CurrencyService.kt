@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import ru.andchelp.money.tracker.bot.client.OpenExchangeClient
 import ru.andchelp.money.tracker.bot.config.BotProperties
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
-import ru.andchelp.money.tracker.bot.model.CurrencyExchangeRate
+import ru.andchelp.money.tracker.bot.model.Currency
 import ru.andchelp.money.tracker.bot.repository.CurrencyExchangeRateRepository
 import ru.andchelp.money.tracker.bot.repository.CurrencyRepository
 import java.math.BigDecimal
@@ -18,16 +18,20 @@ class CurrencyService(
     private val botProperties: BotProperties
 ) {
 
-    fun updateRates() {
-        val map = openExchangeClient.getExchangeRate(botProperties.currencyToken, botProperties.currencyCodes)
-            .rates!!.map {
-                val exchangeRate = exchangeRateRepository.findByCurrencies("USD", it.key)
-                val currencyExchangeRate =
-                    exchangeRate ?: CurrencyExchangeRate(baseCurrencyCode = "USD", rateCurrencyCode = it.key)
-                currencyExchangeRate.rate = it.value
-                currencyExchangeRate
-            }
-        exchangeRateRepository.saveAll(map)
+//    fun updateRates() {
+//        val map = openExchangeClient.getExchangeRate(botProperties.currencyToken, botProperties.currencyCodes)
+//            .rates!!.map {
+//                val exchangeRate = exchangeRateRepository.findByCurrencies("USD", it.key)
+//                val currencyExchangeRate =
+//                    exchangeRate ?: CurrencyExchangeRate(baseCurrencyCode = "USD", rateCurrencyCode = it.key)
+//                currencyExchangeRate.rate = it.value
+//                currencyExchangeRate
+//            }
+//        exchangeRateRepository.saveAll(map)
+//    }
+
+    fun findByCode(code: String): Currency {
+        return currencyRepository.findByCode(code)
     }
 
     fun getKeyboard(id: String): MsgKeyboard {

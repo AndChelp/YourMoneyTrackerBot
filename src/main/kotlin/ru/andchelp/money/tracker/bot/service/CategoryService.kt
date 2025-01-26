@@ -13,6 +13,10 @@ class CategoryService(
     private val userService: UserService,
 ) {
 
+    fun findByIds(ids: Set<Long>): List<Category> {
+        return categoryRepository.findAllById(ids)
+    }
+
     fun addDefaultCategories(user: User) {
         val defaultCategories = listOf(
             Category(type = CashFlowType.INCOME, name = "Зарплата"),
@@ -30,6 +34,11 @@ class CategoryService(
         )
         defaultCategories.forEach { it.user = user }
         categoryRepository.saveAll(defaultCategories)
+    }
+
+    fun getAllCategoriesKeyboard(userId: Long, clbkId: String): MsgKeyboard {
+        val categories = categoryRepository.findByUserId(userId)
+        return msgKeyboard(categories, clbkId)
     }
 
     fun getRootCategoriesKeyboard(userId: Long, type: CashFlowType, clbkId: String): MsgKeyboard {

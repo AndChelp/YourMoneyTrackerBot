@@ -7,6 +7,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.stereotype.Repository
 import ru.andchelp.money.tracker.bot.infra.CashFlowType
 import java.math.BigDecimal
@@ -22,11 +23,11 @@ data class Operation(
     var account: Account? = null,
     @ManyToOne
     var category: Category? = null,
-    val type: CashFlowType,
+    val type: CashFlowType? = null,
     var sum: BigDecimal? = null,
     var date: LocalDateTime = LocalDateTime.now(),
     val repeatFrequency: Int? = null
 )
 
 @Repository
-interface OperationRepository : JpaRepository<Operation, Long>
+interface OperationRepository : JpaRepository<Operation, Long>, JpaSpecificationExecutor<Operation>
