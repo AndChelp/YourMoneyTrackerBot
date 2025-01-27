@@ -14,6 +14,7 @@ import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CategoryService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.OperationService
+import ru.andchelp.money.tracker.bot.service.UserService
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -22,7 +23,8 @@ class OperationHandler(
     private val msgService: MessageService,
     private val categoryService: CategoryService,
     private val accountService: AccountService,
-    private val operationService: OperationService
+    private val operationService: OperationService,
+    private val userService: UserService
 ) {
     @Bean("new_operation")
     fun newOutcomeOperation() = GeneralTextMessageHandler { msg ->
@@ -199,6 +201,7 @@ class OperationHandler(
     fun createNewOperation() = CallbackHandler { clbk ->
         val context: NewOperationContext = ContextHolder.current()!!
         val operation = context.operation
+        operation.user = userService.findById(clbk.userId)
         operationService.save(operation)
 
         msgService.edit(

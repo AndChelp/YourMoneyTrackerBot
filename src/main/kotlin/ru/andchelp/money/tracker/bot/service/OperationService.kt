@@ -10,6 +10,7 @@ import ru.andchelp.money.tracker.bot.model.Account
 import ru.andchelp.money.tracker.bot.model.Category
 import ru.andchelp.money.tracker.bot.model.Operation
 import ru.andchelp.money.tracker.bot.model.OperationRepository
+import ru.andchelp.money.tracker.bot.model.User
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
@@ -17,7 +18,7 @@ import java.time.LocalDateTime
 @Service
 class OperationService(
     private val operationRepository: OperationRepository,
-    private val accountService: AccountService
+    private val accountService: AccountService,
 ) {
 
     fun deleteByAccountId(accountId: Long) {
@@ -45,6 +46,8 @@ class OperationService(
     fun operationSpecification(filter: OperationFilter): Specification<Operation> {
         return Specification { root, query, cb ->
             val predicates = mutableListOf<Predicate>()
+
+            predicates.add(cb.equal(root.get<User>("user").get<Long>("id"), filter.userId))
 
             // Фильтр по accountId
             filter.accountIds.takeIf { it.isNotEmpty() }?.let {
@@ -88,6 +91,7 @@ class OperationService(
 }
 
 data class OperationFilter(
+    var userId: Long,
     var accountIds: MutableSet<Long> = mutableSetOf(),
     var categoryIds: MutableSet<Long> = mutableSetOf(),
     var sumFrom: BigDecimal? = null,

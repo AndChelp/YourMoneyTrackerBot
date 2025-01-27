@@ -23,6 +23,8 @@ data class Operation(
     var account: Account? = null,
     @ManyToOne
     var category: Category? = null,
+    @ManyToOne
+    var user: User? = null,
     val type: CashFlowType? = null,
     var sum: BigDecimal? = null,
     var date: LocalDateTime = LocalDateTime.now(),

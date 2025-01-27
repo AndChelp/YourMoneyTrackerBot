@@ -32,14 +32,14 @@ class OperationHistoryHandler(
     fun operationHistory() = GeneralTextMessageHandler { msg ->
         if (msg.text != "Операции") return@GeneralTextMessageHandler
         ContextHolder.removeContext()
-        renderHistoryMsg(page = 0, filter = OperationFilter())
+        renderHistoryMsg(page = 0, filter = OperationFilter(msg.userId))
     }
 
     @Bean("operation_history_page")
     fun prevOperationPage() = CallbackHandler { clbk ->
         val context: OperationFilterContext? = ContextHolder.current()
         context?.handlerId = null
-        renderHistoryMsg(clbk.data.toInt(), clbk.msgId, context?.operationFilter ?: OperationFilter())
+        renderHistoryMsg(clbk.data.toInt(), clbk.msgId, context?.operationFilter ?: OperationFilter(clbk.userId))
     }
 
     @Bean("change_operation_filter")
@@ -47,7 +47,7 @@ class OperationHistoryHandler(
 
         var context: OperationFilterContext? = ContextHolder.current()
         if (context == null) {
-            context = OperationFilterContext(clbk.msgId, operationFilter = OperationFilter())
+            context = OperationFilterContext(clbk.msgId, operationFilter = OperationFilter(clbk.userId))
             ContextHolder.current[clbk.chatId] = context
         }
         renderHistoryFilter(context.operationFilter, clbk.msgId)
