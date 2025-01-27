@@ -30,4 +30,6 @@ data class Operation(
 )
 
 @Repository
-interface OperationRepository : JpaRepository<Operation, Long>, JpaSpecificationExecutor<Operation>
+interface OperationRepository : JpaRepository<Operation, Long>, JpaSpecificationExecutor<Operation> {
+    fun deleteByAccountId(accountId: Long)
+}

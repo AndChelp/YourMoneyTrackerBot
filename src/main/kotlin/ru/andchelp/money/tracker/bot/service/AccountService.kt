@@ -1,5 +1,6 @@
 package ru.andchelp.money.tracker.bot.service
 
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
@@ -11,7 +12,8 @@ import java.math.RoundingMode
 class AccountService(
     private val accountRepository: AccountRepository,
     private val userService: UserService,
-    private val currencyService: CurrencyService
+    private val currencyService: CurrencyService,
+    @Lazy private val operationService: OperationService
 ) {
 
     fun findByIds(ids: Set<Long>): List<Account> {
@@ -19,6 +21,7 @@ class AccountService(
     }
 
     fun delete(id: Long) {
+        operationService.deleteByAccountId(id)
         accountRepository.deleteById(id)
     }
 

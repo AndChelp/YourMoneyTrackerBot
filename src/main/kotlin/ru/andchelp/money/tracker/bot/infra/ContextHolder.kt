@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.infra
 
 import ru.andchelp.money.tracker.bot.model.Operation
 import ru.andchelp.money.tracker.bot.service.OperationFilter
+import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
 
 class ContextHolder {
@@ -68,4 +69,12 @@ class OperationFilterContext(
     baseMsgId: Int,
     handlerId: String? = null,
     val operationFilter: OperationFilter
+) : Context(baseMsgId, handlerId)
+
+class CategoryReportContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+    var dateStart: LocalDate = LocalDate.now().withDayOfMonth(1),
+    var dateEnd: LocalDate = LocalDate.now(),
+    val accountIds: MutableSet<Long> = mutableSetOf()
 ) : Context(baseMsgId, handlerId)

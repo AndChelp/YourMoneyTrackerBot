@@ -20,6 +20,10 @@ class OperationService(
     private val accountService: AccountService
 ) {
 
+    fun deleteByAccountId(accountId: Long) {
+        operationRepository.deleteByAccountId(accountId)
+    }
+
     fun save(operation: Operation) {
         operationRepository.save(operation)
         val account = accountService.findById(operation.account!!.id!!)
@@ -77,7 +81,7 @@ class OperationService(
                 predicates.add(cb.lessThanOrEqualTo(root.get("date"), it.plusDays(1).toLocalDate().atStartOfDay()))
             }
 
-            query.orderBy(cb.asc(root.get<LocalDateTime>("date")), cb.asc(root.get<Long>("id")))
+            query.orderBy(cb.desc(root.get<LocalDateTime>("date")), cb.desc(root.get<Long>("id")))
             cb.and(*predicates.toTypedArray())
         }
     }
