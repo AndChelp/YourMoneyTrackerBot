@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
@@ -24,13 +25,13 @@ class CategoryHandler(
 
     @Bean("categories_btn_text")
     fun categoriesBtn() = GeneralTextMessageHandler { msg ->
-        if (msg.text != "Категории") return@GeneralTextMessageHandler
+        if (msg.text != TextKey.CATEGORIES) return@GeneralTextMessageHandler
 
         msgService.send(
             CATEGORY_MANAGEMENT,
             MsgKeyboard().row()
-                .button("Доход", "root_categories", CashFlowType.INCOME.name)
-                .button("Расход", "root_categories", CashFlowType.OUTCOME.name)
+                .button(TextKey.INCOME, "root_categories", CashFlowType.INCOME.name)
+                .button(TextKey.OUTCOME, "root_categories", CashFlowType.OUTCOME.name)
         )
     }
 
@@ -41,8 +42,8 @@ class CategoryHandler(
             clbk.msgId,
             CATEGORY_MANAGEMENT,
             MsgKeyboard().row()
-                .button("Доход", "root_categories", CashFlowType.INCOME.name)
-                .button("Расход", "root_categories", CashFlowType.OUTCOME.name)
+                .button(TextKey.INCOME, "root_categories", CashFlowType.INCOME.name)
+                .button(TextKey.OUTCOME, "root_categories", CashFlowType.OUTCOME.name)
         )
     }
 
@@ -62,8 +63,8 @@ class CategoryHandler(
         val keyboard = categoryService
             .getRootCategoriesKeyboard(userId, cashFlowType, "subcategories")
             .row()
-            .button("<< Назад", "categories_btn_clbk")
-            .button("+ Добавить", "add_root_category", cashFlowType.name)
+            .button(TextKey.BACK, "categories_btn_clbk")
+            .button(TextKey.ADD, "add_root_category", cashFlowType.name)
         msgService.edit(msgId, "Управление категориями $s", keyboard)
     }
 
@@ -79,10 +80,10 @@ class CategoryHandler(
         val subcategoriesKeyboard = categoryService
             .getSubcategoriesKeyboard(categoryId, "subcategory")
             .row()
-            .button("Удалить", "delete_category", categoryId)
+            .button(TextKey.DELETE, "delete_category", categoryId)
             .row()
-            .button("<< Назад", "root_categories", category.type!!.name)
-            .button("+ Добавить", "add_subcategory", categoryId)
+            .button(TextKey.BACK, "root_categories", category.type!!.name)
+            .button(TextKey.ADD, "add_subcategory", categoryId)
 
         msgService.edit(msgId, "Управление категорией \"${category.name}\"", subcategoriesKeyboard)
     }
@@ -95,10 +96,8 @@ class CategoryHandler(
         val category = categoryService.findById(categoryId)
 
         val keyboard = MsgKeyboard()
-            .row()
-            .button("Удалить", "delete_category", categoryIdStr)
-            .row()
-            .button("<< Назад", "subcategories", category.parenCategory!!.id)
+            .row().button(TextKey.DELETE, "delete_category", categoryIdStr)
+            .row().button(TextKey.BACK, "subcategories", category.parenCategory!!.id)
         msgService.edit(clbk.msgId, "Управление подкатегорией \"${category.name}\"", keyboard)
 
     }
@@ -109,7 +108,7 @@ class CategoryHandler(
         msgService.edit(
             clbk.msgId,
             "Введите название категории",
-            MsgKeyboard().row().button("<< Назад", "root_categories", clbk.data)
+            MsgKeyboard().row().button(TextKey.BACK, "root_categories", clbk.data)
         )
         ContextHolder.current[clbk.chatId] =
             NewCategoryContext(clbk.msgId, "category_name_input", CashFlowType.valueOf(clbk.data))
@@ -123,7 +122,7 @@ class CategoryHandler(
         msgService.edit(
             clbk.msgId,
             "Введите название подкатегории для категории ${category.name}",
-            MsgKeyboard().row().button("<< Назад", "subcategories", category.id)
+            MsgKeyboard().row().button(TextKey.BACK, "subcategories", category.id)
         )
         ContextHolder.current[clbk.chatId] =
             NewCategoryContext(
@@ -141,8 +140,8 @@ class CategoryHandler(
         msgService.delete(msg.msgId)
         msgService.edit(
             context.baseMsgId, "Название новой подкатегории: \"${msg.text}\"", MsgKeyboard().row()
-                .button("<< Назад", "subcategories", context.parentCategory)
-                .button("Подтвердить", "save_category")
+                .button(TextKey.BACK, "subcategories", context.parentCategory)
+                .button(TextKey.CONFIRM, "save_category")
         )
 
     }
@@ -154,8 +153,8 @@ class CategoryHandler(
         msgService.delete(msg.msgId)
         msgService.edit(
             context.baseMsgId, "Название новой категории: \"${msg.text}\"", MsgKeyboard().row()
-                .button("<< Назад", "root_categories", context.type!!.name)
-                .button("Подтвердить", "save_category")
+                .button(TextKey.BACK, "root_categories", context.type!!.name)
+                .button(TextKey.CONFIRM, "save_category")
         )
     }
 

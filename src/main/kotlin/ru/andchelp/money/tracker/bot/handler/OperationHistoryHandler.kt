@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.Pageable
 import ru.andchelp.money.tracker.bot.abbreviate
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
@@ -30,7 +31,7 @@ class OperationHistoryHandler(
 
     @Bean("operation_history")
     fun operationHistory() = GeneralTextMessageHandler { msg ->
-        if (msg.text != "Операции") return@GeneralTextMessageHandler
+        if (msg.text != TextKey.OPERATIONS) return@GeneralTextMessageHandler
         ContextHolder.removeContext()
         renderHistoryMsg(page = 0, filter = OperationFilter(msg.userId))
     }
@@ -60,7 +61,11 @@ class OperationHistoryHandler(
         msgService.edit(
             clbk.msgId,
             "Введите начало диапазона сумм",
-            MsgKeyboard().row().button("Очистить значение", "operation_filter_clean_sum_from")
+            MsgKeyboard()
+                .row()
+                .button(TextKey.BACK, "change_operation_filter")
+                .button(TextKey.CLEAN, "operation_filter_clean_sum_from")
+
         )
     }
 
@@ -87,7 +92,11 @@ class OperationHistoryHandler(
         msgService.edit(
             clbk.msgId,
             "Введите окончание диапазона сумм",
-            MsgKeyboard().row().button("Очистить значение", "operation_filter_clean_sum_till")
+            MsgKeyboard()
+                .row()
+                .button(TextKey.BACK, "change_operation_filter")
+                .button(TextKey.CLEAN, "operation_filter_clean_sum_till")
+
         )
     }
 
@@ -122,12 +131,12 @@ class OperationHistoryHandler(
         keyboard.keyboard.forEach { row ->
             row.forEach { button ->
                 val status = if (categoryIds.contains(button.callbackData.substringAfter(":").toLong()))
-                    "вкл" else "выкл"
-                button.text = "($status) ${button.text}"
+                    "✓" else "✗"
+                button.text = "($status)    ${button.text}"
             }
         }
 
-        keyboard.row().button("Применить", "change_operation_filter")
+        keyboard.row().button(TextKey.APPLY, "change_operation_filter")
         msgService.edit(
             clbk.msgId,
             "Выберите категории для фильтра:",
@@ -147,12 +156,12 @@ class OperationHistoryHandler(
         keyboard.keyboard.forEach { row ->
             row.forEach { button ->
                 val status = if (accountIds.contains(button.callbackData.substringAfter(":").toLong()))
-                    "вкл" else "выкл"
-                button.text = "($status) ${button.text}"
+                    "✓" else "✗"
+                button.text = "($status)    ${button.text}"
             }
         }
 
-        keyboard.row().button("Применить", "change_operation_filter")
+        keyboard.row().button(TextKey.APPLY, "change_operation_filter")
         msgService.edit(
             clbk.msgId,
             "Выберите счета для фильтра:",
@@ -164,7 +173,11 @@ class OperationHistoryHandler(
     fun operationFilterChangeDateFrom() = CallbackHandler { clbk ->
         val context: OperationFilterContext = ContextHolder.current()!!
         context.handlerId = "operation_filer_input_date_from"
-        msgService.edit(clbk.msgId, "Введите начало периода в формате ГГГГ-ММ-ДД")
+        msgService.edit(
+            clbk.msgId,
+            "Введите начало периода в формате ГГГГ-ММ-ДД",
+            MsgKeyboard().row().button(TextKey.BACK, "change_operation_filter")
+        )
     }
 
     @Bean("operation_filer_input_date_from")
@@ -179,7 +192,11 @@ class OperationHistoryHandler(
     fun operationFilterChangeDateTill() = CallbackHandler { clbk ->
         val context: OperationFilterContext = ContextHolder.current()!!
         context.handlerId = "operation_filer_input_date_till"
-        msgService.edit(clbk.msgId, "Введите конец периода в формате ГГГГ-ММ-ДД")
+        msgService.edit(
+            clbk.msgId,
+            "Введите конец периода в формате ГГГГ-ММ-ДД",
+            MsgKeyboard().row().button(TextKey.BACK, "change_operation_filter")
+        )
     }
 
     @Bean("operation_filer_input_date_till")
@@ -202,16 +219,16 @@ class OperationHistoryHandler(
             "Выберите тип для фильтра",
             MsgKeyboard().row()
                 .button(
-                    "Доход (${if (types.contains(CashFlowType.INCOME)) "вкл" else "выкл"})",
+                    "(${if (types.contains(CashFlowType.INCOME)) "✓" else "✗"})    ${TextKey.INCOME}",
                     "operation_filter_change_type",
                     CashFlowType.INCOME.name
                 )
                 .button(
-                    "Расход (${if (types.contains(CashFlowType.OUTCOME)) "вкл" else "выкл"})",
+                    "(${if (types.contains(CashFlowType.OUTCOME)) "✓" else "✗"})    ${TextKey.OUTCOME}",
                     "operation_filter_change_type",
                     CashFlowType.OUTCOME.name
                 )
-                .row().button("Применить", "change_operation_filter")
+                .row().button(TextKey.APPLY, "change_operation_filter")
         )
     }
 
@@ -246,32 +263,32 @@ class OperationHistoryHandler(
         return buildString {
             appendLine("История операций")
             if (filter.types.isNotEmpty()) {
-                append("Типы операций: ")
+                append("↕️ Типы операций: ")
                 appendLine(filter.types.joinToString(", ") {
                     when (it) {
-                        CashFlowType.INCOME -> "доход"
-                        CashFlowType.OUTCOME -> "расход"
+                        CashFlowType.INCOME -> TextKey.INCOME
+                        CashFlowType.OUTCOME -> TextKey.OUTCOME
                     }
                 })
             }
-            appendLine("Период: с ${filter.dateFrom.toLocalDate()} по ${filter.dateTill.toLocalDate()}")
+            appendLine("📆 Период: с ${filter.dateFrom.toLocalDate()} по ${filter.dateTill.toLocalDate()}")
             if (filter.accountIds.isNotEmpty()) {
-                append("Счета: ")
+                append("💼 Счета: ")
                 appendLine(accountService.findByIds(filter.accountIds).map { it.name }.joinToString(", "))
             }
             if (filter.categoryIds.isNotEmpty()) {
-                append("Категории: ")
+                append("🗂️ Категории: ")
                 appendLine(categoryService.findByIds(filter.categoryIds).map { it.name }.joinToString(", "))
             }
             if (filter.sumFrom != null || filter.sumTill != null) {
-                append("Сумма:")
+                append("🔢 Сумма:")
                 if (filter.sumFrom != null)
                     append(" от ${filter.sumFrom}")
                 if (filter.sumTill != null)
                     append(" до ${filter.sumTill}")
                 appendLine()
             }
-            appendLine("Операций найдено: $totalOperations")
+            appendLine("🔎 Операций найдено: $totalOperations")
         }
     }
 
@@ -299,8 +316,8 @@ class OperationHistoryHandler(
                     "Тип: ${
                         filter.types.joinToString(", ") {
                             when (it) {
-                                CashFlowType.INCOME -> "доход"
-                                CashFlowType.OUTCOME -> "расход"
+                                CashFlowType.INCOME -> TextKey.INCOME
+                                CashFlowType.OUTCOME -> TextKey.OUTCOME
                             }
                         }.takeIf { it.isNotEmpty() } ?: "любой"
                     }", "operation_filter_change_type"
@@ -324,7 +341,7 @@ class OperationHistoryHandler(
                 .row()
                 .button("Сумма от: ${filter.sumFrom ?: "-"}", "operation_filter_change_sum_from")
                 .button("Сумма до: ${filter.sumTill ?: "-"}", "operation_filter_change_sum_till")
-                .row().button("Применить", "operation_history_page", 0)
+                .row().button(TextKey.APPLY, "operation_history_page", 0)
         )
     }
 }

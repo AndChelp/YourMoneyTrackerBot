@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
 import ru.andchelp.money.tracker.bot.repository.AccountRepository
@@ -20,6 +21,7 @@ class AccountService(
         return accountRepository.findAllById(ids)
     }
 
+    @Transactional
     fun delete(id: Long) {
         operationService.deleteByAccountId(id)
         accountRepository.deleteById(id)

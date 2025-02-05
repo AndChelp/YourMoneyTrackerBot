@@ -1,18 +1,14 @@
 package ru.andchelp.money.tracker.bot.config
 
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
+import ru.andchelp.money.tracker.bot.infra.TgKeyboard
 
 class MenuConfig {
     companion object {
-        val SIMPLE = listOf(KeyboardRow(KeyboardButton("Настройки"), KeyboardButton("Помощь")))
-        val FULL =
-            listOf(
-                KeyboardRow(KeyboardButton("Расход"), KeyboardButton("Доход")),
-                KeyboardRow(KeyboardButton("Счета"), KeyboardButton("Категории")),
-                KeyboardRow(KeyboardButton("Аналитика"), KeyboardButton("Операции")),
-                KeyboardRow(KeyboardButton("Настройки"), KeyboardButton("Помощь")),
-            )
-
+        val SIMPLE = TgKeyboard().row().button(TextKey.SETTINGS).button(TextKey.HELP)
+        val FULL = TgKeyboard()
+            .row().button(TextKey.INCOME).button(TextKey.OUTCOME)
+            .row().button(TextKey.ACCOUNTS).button(TextKey.CATEGORIES)
+            .row().button(TextKey.ANALYTICS).button(TextKey.OPERATIONS)
+            .row().button(TextKey.SETTINGS).button(TextKey.HELP)
     }
 }

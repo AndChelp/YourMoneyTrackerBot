@@ -3,6 +3,7 @@ package ru.andchelp.money.tracker.bot.handler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import ru.andchelp.money.tracker.bot.config.MenuConfig
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.CommandHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
@@ -27,24 +28,27 @@ class GreetingHandler(
     @Bean("/start")
     fun startCmd() = CommandHandler { cmd ->
         if (userService.userExists(cmd.userId)) {
-            msgService.send(USE_MENU_FOR_NAVIGATION, *MenuConfig.FULL.toTypedArray())
+            msgService.send(TextKey.USE_MENU_FOR_NAVIGATION, MenuConfig.FULL)
         } else {
-            msgService.send(FEW_STEPS, *MenuConfig.SIMPLE.toTypedArray())
-            msgService.send(SELECT_CURRENCY, currencyService.getKeyboard("global_currency"))
+            msgService.send(TextKey.FEW_STEPS, MenuConfig.SIMPLE)
+            msgService.send(TextKey.SELECT_CURRENCY, currencyService.getKeyboard("global_currency"))
         }
     }
 
     @Bean("global_currency")
     fun currencyClbk() = CallbackHandler { clbk ->
-        msgService.edit(clbk.msgId, "$GLOBAL_CURRENCY ${clbk.data}")
+        msgService.edit(clbk.msgId, "${TextKey.GLOBAL_CURRENCY} ${clbk.data}")
         val user = userService.save(clbk.userId, clbk.data)
         categoryService.addDefaultCategories(user)
-        msgService.send(LAST_STEP_CREATE_NEW_ACC, MsgKeyboard().row().button(NEW_ACCOUNT, "greeting_new_account"))
+        msgService.send(
+            TextKey.LAST_STEP_CREATE_NEW_ACC,
+            MsgKeyboard().row().button(TextKey.NEW_ACCOUNT, "greeting_new_account")
+        )
     }
 
     @Bean("greeting_new_account")
     fun newAccountClbk() = CallbackHandler { clbk ->
-        msgService.edit(clbk.msgId, WRITE_ACC_NAME)
+        msgService.edit(clbk.msgId, TextKey.WRITE_ACC_NAME)
         ContextHolder.current[clbk.chatId] = GreetingNewAccountContext(clbk.msgId, "greeting_account_name_msg")
     }
 
@@ -56,8 +60,8 @@ class GreetingHandler(
         msgService.delete(msg.msgId)
         msgService.edit(
             context.baseMsgId,
-            ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
-            currencyService.getKeyboard("greeting_account_currency").row().button(BACK, "greeting_new_account")
+            TextKey.ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
+            currencyService.getKeyboard("greeting_account_currency").row().button(TextKey.BACK, "greeting_new_account")
         )
     }
 
@@ -68,10 +72,10 @@ class GreetingHandler(
 
         msgService.edit(
             clbk.msgId,
-            SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
+            TextKey.SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
             MsgKeyboard()
-                .row().button(CONFIRM, "greeting_complete_account_creation")
-                .row().button(BACK, "greeting_new_account")
+                .row().button(TextKey.CONFIRM, "greeting_complete_account_creation")
+                .row().button(TextKey.BACK, "greeting_new_account")
         )
     }
 
@@ -79,27 +83,10 @@ class GreetingHandler(
     fun completeAccountCreationClbk() = CallbackHandler { clbk ->
         msgService.delete(clbk.msgId)
 
-        msgService.send(END_GREETING_TEXT, *MenuConfig.FULL.toTypedArray())
+        msgService.send(TextKey.END_GREETING_TEXT, MenuConfig.FULL)
         val accountContext: GreetingNewAccountContext = ContextHolder.current()!!
         accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
         ContextHolder.removeContext()
-    }
-
-    companion object {
-        const val USE_MENU_FOR_NAVIGATION = "Используйте кнопки меню для навигации"
-        const val SELECT_CURRENCY = "greeting.please.select.currency"
-        const val FEW_STEPS = "greeting.few.steps"
-        const val LAST_STEP_CREATE_NEW_ACC = "Еще один шаг - создайте первый счет"
-        const val GLOBAL_CURRENCY = "Основная валюта:"
-        const val NEW_ACCOUNT = "Новый счет"
-        const val BACK = "Назад"
-        const val CONFIRM = "Подтвердить"
-        const val WRITE_ACC_NAME = "Введите название счета"
-        const val ACC_NAME_CHOOSE_CURRENCY = "Название счета: %s\nВыберите валюту счета"
-        const val SCHOOSED_NAME_AND_CURRENCY = "Название счета: %s\nВалюта: %s"
-        const val END_GREETING_TEXT = "Ваш первый счет создан, теперь можно приступать к работе!\n" +
-                "Можете начать с создания дополнительных счетов, настроить категории под себя или сразу приступить к " +
-                "вводу доходов и расходов, используя соответствующие кнопки меню"
     }
 
 }

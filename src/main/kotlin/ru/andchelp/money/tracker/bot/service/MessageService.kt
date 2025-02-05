@@ -7,8 +7,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.andchelp.money.tracker.bot.infra.ContextHolder
 import java.util.Locale
@@ -19,31 +18,11 @@ class MessageService(
     private val telegramClient: TelegramClient
 ) {
 
-
     fun msgFor(code: String): String {
         return messageSource.getMessage(code, null, Locale.ENGLISH)
     }
 
-    fun send(text: String) {
-        telegramClient.execute(
-            SendMessage.builder()
-                .chatId(ContextHolder.chatId.get())
-                .text(msgFor(text))
-                .build()
-        )
-    }
-
-    fun send(text: String, vararg rows: KeyboardRow) {
-        telegramClient.execute(
-            SendMessage.builder()
-                .chatId(ContextHolder.chatId.get())
-                .text(msgFor(text))
-                .replyMarkup(ReplyKeyboardMarkup.builder().keyboard(listOf(*rows)).resizeKeyboard(true).build())
-                .build()
-        )
-    }
-
-    fun send(text: String, keyboard: InlineKeyboardMarkup): Message {
+    fun send(text: String, keyboard: ReplyKeyboard?): Message {
         return telegramClient.execute(
             SendMessage.builder()
                 .chatId(ContextHolder.chatId.get())

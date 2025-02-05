@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.andchelp.money.tracker.bot.abbreviate
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
 import ru.andchelp.money.tracker.bot.infra.CategoryReportContext
@@ -26,12 +27,12 @@ class AnalyticsHandler(
 
     @Bean("reports")
     fun reports() = GeneralTextMessageHandler { msg ->
-        if (msg.text != "Аналитика") return@GeneralTextMessageHandler
+        if (msg.text != TextKey.ANALYTICS) return@GeneralTextMessageHandler
         val keyboard = MsgKeyboard()
         SupportedReports.entries.map {
             keyboard.row().button(it.text, it.clbkId)
         }
-        msgService.send("Выберите тип отчета", keyboard)
+        msgService.send("Выберите тип отчета из доступных", keyboard)
     }
 
     @Bean("reports_clbk")
@@ -40,7 +41,7 @@ class AnalyticsHandler(
         SupportedReports.entries.map {
             keyboard.row().button(it.text, it.clbkId)
         }
-        msgService.edit(clbk.msgId, "Выберите тип отчета", keyboard)
+        msgService.edit(clbk.msgId, "Выберите тип отчета из доступных", keyboard)
     }
 
     @Bean("accounts_report")
@@ -63,7 +64,7 @@ class AnalyticsHandler(
                         accountService.findByIds(context.accountIds).joinToString(", ") { it.name!!.abbreviate() }
                             .takeIf { it.isNotEmpty() } ?: "все"
                     }", "acc_rep_select_accounts")
-                .row().button("<< Назад", "reports_clbk").button("Показать", "show_accounts_report")
+                .row().button(TextKey.BACK, "reports_clbk").button(TextKey.CONFIRM, "show_accounts_report")
         )
     }
 
@@ -80,7 +81,7 @@ class AnalyticsHandler(
                     "\n" +
                     "Счет: Наличка usd\n" +
                     "Доходы: 0\$\n" +
-                    "Расходы: 3\$", MsgKeyboard().row().button("<< Назад", "accounts_report")
+                    "Расходы: 3\$", MsgKeyboard().row().button(TextKey.BACK, "accounts_report")
         )
 
     }
@@ -96,11 +97,11 @@ class AnalyticsHandler(
         keyboard.keyboard.forEach { row ->
             row.forEach { button ->
                 val status = if (accountIds.contains(button.callbackData.substringAfter(":").toLong()))
-                    "вкл" else "выкл"
-                button.text = "($status) ${button.text}"
+                    "✓" else "✗"
+                button.text = "($status)    ${button.text}"
             }
         }
-        keyboard.row().button("Применить", "accounts_report")
+        keyboard.row().button(TextKey.APPLY, "accounts_report")
         msgService.edit(
             clbk.msgId,
             "Выберите счета для отчета:",
@@ -115,8 +116,8 @@ class AnalyticsHandler(
         val context: CategoryReportContext = ContextHolder.current()!!
         context.dateStart = date
         val keyboard = MsgKeyboard()
-            .row().button("Изменить", "date_input", "acc_rep_input_start_date:${clbk.data}")
-            .row().button("Готово", "accounts_report")
+            .row().button(TextKey.EDIT, "date_input", "acc_rep_input_start_date:${clbk.data}")
+            .row().button(TextKey.APPLY, "accounts_report")
         msgService.edit(clbk.msgId, "Начало периода отчета: $date", keyboard)
     }
 
@@ -128,8 +129,8 @@ class AnalyticsHandler(
         val context: CategoryReportContext = ContextHolder.current()!!
         context.dateEnd = date
         val keyboard = MsgKeyboard()
-            .row().button("Изменить", "date_input", "acc_rep_input_end_date:${clbk.data}")
-            .row().button("Готово", "accounts_report")
+            .row().button(TextKey.EDIT, "date_input", "acc_rep_input_end_date:${clbk.data}")
+            .row().button(TextKey.APPLY, "accounts_report")
         msgService.edit(clbk.msgId, "Окончание периода отчета: $date", keyboard)
     }
 
@@ -138,8 +139,8 @@ class AnalyticsHandler(
         val callback = clbk.data.substringBefore(":")
         val date = LocalDate.parse(clbk.data.substringAfter(":"))
         val keyboard = keyboardForDate(date, callback)
-            .row().button("Отменить", "accounts_report")
-            .button("Готово", callback, date)
+            .row().button(TextKey.CANCEL, "accounts_report")
+            .button(TextKey.APPLY, callback, date)
         msgService.edit(clbk.msgId, "Введите дату нажимая кнопки", keyboard)
     }
 
@@ -159,8 +160,8 @@ class AnalyticsHandler(
         }
 
         keyboard.row()
-            .button("Отменить", "accounts_report")
-            .button("Готово", callback, date)
+            .button(TextKey.CANCEL, "accounts_report")
+            .button(TextKey.APPLY, callback, date)
         msgService.edit(clbk.msgId, "Введите дату нажимая кнопки", keyboard)
     }
 
@@ -186,8 +187,8 @@ class AnalyticsHandler(
         }
 
         keyboard.row()
-            .button("Отменить", "accounts_report")
-            .button("Готово", callback, date)
+            .button(TextKey.CANCEL, "accounts_report")
+            .button(TextKey.APPLY, callback, date)
         msgService.edit(clbk.msgId, "Введите дату нажимая кнопки", keyboard)
     }
 
@@ -222,8 +223,8 @@ class AnalyticsHandler(
         }
 
         keyboard.row()
-            .button("Отменить", "accounts_report")
-            .button("Готово", callback, date)
+            .button(TextKey.CANCEL, "accounts_report")
+            .button(TextKey.APPLY, callback, date)
         msgService.edit(clbk.msgId, "Введите дату нажимая кнопки", keyboard)
     }
 

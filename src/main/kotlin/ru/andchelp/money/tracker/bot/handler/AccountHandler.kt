@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
@@ -24,16 +25,17 @@ class AccountHandler(
 ) {
     @Bean("account_list")
     fun accountList() = GeneralTextMessageHandler { msg ->
-        if (msg.text != "Счета") return@GeneralTextMessageHandler
+        if (msg.text != TextKey.ACCOUNTS) return@GeneralTextMessageHandler
         val accountsKeyboard = accountService.getKeyboard(msg.userId, "account_info")
-        if (accountsKeyboard.keyboard.isEmpty()) {
-            msgService.send(YOU_DONT_HAVE_ACC_CREATE_NEW, MsgKeyboard().row().button(NEW_ACCOUNT, "new_account"))
+
+        val text = if (accountsKeyboard.keyboard.isEmpty()) {
+            TextKey.YOU_DONT_HAVE_ACC_CREATE_NEW
         } else {
             val totalBalance = accountService.calcTotalBalance(msg.userId)
             val globalUserCurrency = userService.findById(msg.userId).globalCurrency!!.symbol
-            accountsKeyboard.row().button(NEW_ACCOUNT, "new_account")
-            msgService.send(GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency), accountsKeyboard)
+            TextKey.GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency)
         }
+        msgService.send(text, accountsKeyboard.row().button(TextKey.NEW_ACCOUNT, "new_account"))
     }
 
     @Bean("account_list_clbk")
@@ -42,16 +44,16 @@ class AccountHandler(
         if (accountsKeyboard.keyboard.isEmpty()) {
             msgService.edit(
                 clbk.msgId,
-                YOU_DONT_HAVE_ACC_CREATE_NEW,
-                MsgKeyboard().row().button(NEW_ACCOUNT, "new_account")
+                TextKey.YOU_DONT_HAVE_ACC_CREATE_NEW,
+                MsgKeyboard().row().button(TextKey.NEW_ACCOUNT, "new_account")
             )
         } else {
             val totalBalance = accountService.calcTotalBalance(clbk.userId)
             val globalUserCurrency = userService.findById(clbk.userId).globalCurrency!!.symbol
-            accountsKeyboard.row().button(NEW_ACCOUNT, "new_account")
+            accountsKeyboard.row().button(TextKey.NEW_ACCOUNT, "new_account")
             msgService.edit(
                 clbk.msgId,
-                GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency),
+                TextKey.GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, globalUserCurrency),
                 accountsKeyboard
             )
         }
@@ -59,7 +61,7 @@ class AccountHandler(
 
     @Bean("new_account")
     fun newAccount() = CallbackHandler { clbk ->
-        msgService.edit(clbk.msgId, WRITE_ACC_NAME)
+        msgService.edit(clbk.msgId, TextKey.WRITE_ACC_NAME)
         ContextHolder.current[clbk.chatId] = NewAccountContext(clbk.msgId, "account_name_msg")
     }
 
@@ -69,8 +71,8 @@ class AccountHandler(
 
         msgService.edit(
             context.baseMsgId,
-            ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
-            currencyService.getKeyboard("account_currency").row().button(GreetingHandler.BACK, "new_account")
+            TextKey.ACC_NAME_CHOOSE_CURRENCY.format(msg.text),
+            currencyService.getKeyboard("account_currency").row().button(TextKey.BACK, "new_account")
         )
         msgService.delete(msg.msgId)
         context.name = msg.text
@@ -83,10 +85,10 @@ class AccountHandler(
 
         msgService.edit(
             clbk.msgId,
-            SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
+            TextKey.SCHOOSED_NAME_AND_CURRENCY.format(context.name, clbk.data),
             MsgKeyboard()
-                .row().button(GreetingHandler.CONFIRM, "complete_account_creation")
-                .row().button(GreetingHandler.BACK, "new_account")
+                .row().button(TextKey.CONFIRM, "complete_account_creation")
+                .row().button(TextKey.BACK, "new_account")
         )
     }
 
@@ -100,9 +102,13 @@ class AccountHandler(
         val userGlobalCurrency = userService.findById(clbk.userId).globalCurrency!!.symbol
 
         val accountsKeyboard = accountService.getKeyboard(clbk.userId, "account_info")
-            .row().button(NEW_ACCOUNT, "new_account")
+            .row().button(TextKey.NEW_ACCOUNT, "new_account")
 
-        msgService.edit(clbk.msgId, GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, userGlobalCurrency), accountsKeyboard)
+        msgService.edit(
+            clbk.msgId,
+            TextKey.GLOBAL_BALANCE_YOUR_ACCS.format(totalBalance, userGlobalCurrency),
+            accountsKeyboard
+        )
 
         ContextHolder.current.remove(clbk.chatId)
     }
@@ -113,14 +119,14 @@ class AccountHandler(
 
         val account = accountService.findById(clbk.data.toLong())
         msgService.edit(
-            clbk.msgId, "Счет ${account.name}\n" +
-                    "Баланс: ${account.balance}${account.currency!!.symbol}\n" +
-                    "Валюта: ${msgService.msgFor(account.currency!!.name!!)}\n" +
-                    "Учитывать в общем балансе: ${if (account.allowInTotalBalance) "+" else "-"}\n" +
-                    "Дата создания: ${account.creationDate.toLocalDate()}",
+            clbk.msgId, "Счет \"${account.name}\"\n" +
+                    "🏦 Баланс: ${account.balance}${account.currency!!.symbol}\n" +
+                    "💱 Валюта: ${msgService.msgFor(account.currency!!.name!!)}\n" +
+                    "⚖️ Учитывать в общем балансе: ${if (account.allowInTotalBalance) "✓" else "✗"}\n" +
+                    "📆 Дата создания: ${account.creationDate.toLocalDate()}",
             MsgKeyboard()
-                .row().button("Редактировать", "change_account_info", account.id)
-                .row().button("<< Назад", "account_list_clbk")
+                .row().button(TextKey.EDIT, "change_account_info", account.id)
+                .row().button(TextKey.BACK, "account_list_clbk")
         )
     }
 
@@ -136,18 +142,18 @@ class AccountHandler(
             msgId,
             "Изменение параметров счета",
             MsgKeyboard()
-                .row().button("Название: ${account.name}", "change_account_name", account.id)
+                .row().button("🔤 Название: ${account.name}", "change_account_name", account.id)
                 .row().button(
-                    "Валюта: ${msgService.msgFor(account.currency!!.name!!)}",
+                    "💱 Валюта: ${msgService.msgFor(account.currency!!.name!!)}",
                     "change_account_currency",
                     account.id
                 )
                 .row().button(
-                    "Учитывать в общем балансе: ${if (account.allowInTotalBalance) "+" else "-"}\n",
+                    "⚖️ Учитывать в общем балансе: ${if (account.allowInTotalBalance) "✓" else "✗"}\n",
                     "change_allow_in_total_balance", account.id
                 )
-                .row().button("Удалить счет", "delete_account", account.id)
-                .row().button("<< Назад", "account_info", account.id)
+                .row().button(TextKey.DELETE, "delete_account", account.id)
+                .row().button(TextKey.BACK, "account_info", account.id)
         )
     }
 
@@ -159,7 +165,7 @@ class AccountHandler(
         msgService.edit(
             clbk.msgId,
             "Укажите новое название",
-            MsgKeyboard().row().button("<< Назад", "change_account_info", clbk.data)
+            MsgKeyboard().row().button(TextKey.BACK, "change_account_info", clbk.data)
         )
     }
 
@@ -182,7 +188,7 @@ class AccountHandler(
             clbk.msgId,
             "Выберите новую валюту счета.\nВсе связанные операции будут перечитаны по состоянию курса на момент записи!",
             currencyService.getKeyboard("change_account_currency_input").row()
-                .button(GreetingHandler.BACK, "change_account_info", clbk.data)
+                .button(TextKey.BACK, "change_account_info", clbk.data)
         )
     }
 
@@ -212,8 +218,8 @@ class AccountHandler(
     fun deleteAccount() = CallbackHandler { clbk ->
         msgService.edit(
             clbk.msgId, "Вы уверены что хотите удалить счет?\nВсе связанные операции также будут удалены!",
-            MsgKeyboard().row().button("Подтвердить", "confirm_account_deletion", clbk.data)
-                .button(GreetingHandler.BACK, "change_account_info", clbk.data)
+            MsgKeyboard().row().button(TextKey.CONFIRM, "confirm_account_deletion", clbk.data)
+                .button(TextKey.BACK, "change_account_info", clbk.data)
         )
     }
 
@@ -227,15 +233,4 @@ class AccountHandler(
         )
     }
 
-    companion object {
-
-        const val YOU_DONT_HAVE_ACC_CREATE_NEW = "У вас еще нет счетов!\nДля создания нового счета нажмите кнопку ниже"
-        const val GLOBAL_BALANCE_YOUR_ACCS = "Общий баланс: %s%s\nВаши счета:"
-
-        const val NEW_ACCOUNT = "Новый счет"
-        const val WRITE_ACC_NAME = "Введите название счета"
-
-        const val ACC_NAME_CHOOSE_CURRENCY = "Название счета: %s\nВыберите валюту счета"
-        const val SCHOOSED_NAME_AND_CURRENCY = "Название счета: %s\nВалюта: %s"
-    }
 }

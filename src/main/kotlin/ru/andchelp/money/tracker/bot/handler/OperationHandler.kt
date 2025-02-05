@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.handler
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import ru.andchelp.money.tracker.bot.config.TextKey
 import ru.andchelp.money.tracker.bot.handler.type.CallbackHandler
 import ru.andchelp.money.tracker.bot.handler.type.ContextualTextMessageHandler
 import ru.andchelp.money.tracker.bot.handler.type.GeneralTextMessageHandler
@@ -26,30 +27,30 @@ class OperationHandler(
     private val operationService: OperationService,
     private val userService: UserService
 ) {
+    companion object {
+        const val NOT_SELECTED = "не указано"
+    }
+
     @Bean("new_operation")
     fun newOutcomeOperation() = GeneralTextMessageHandler { msg ->
-        if (!(msg.text == "Расход" || msg.text == "Доход")) return@GeneralTextMessageHandler
+        if (!(msg.text == TextKey.OUTCOME || msg.text == TextKey.INCOME)) return@GeneralTextMessageHandler
         val flowType = when (msg.text) {
-            "Расход" -> CashFlowType.OUTCOME
-            "Доход" -> CashFlowType.INCOME
+            TextKey.OUTCOME -> CashFlowType.OUTCOME
+            TextKey.INCOME -> CashFlowType.INCOME
             else -> throw RuntimeException()
         }
-        val message = msgService.send(
-            "Добавление операции ${
-                when (flowType) {
-                    CashFlowType.OUTCOME -> "расхода"
-                    CashFlowType.INCOME -> "дохода"
-                }
-            }",
-            MsgKeyboard()
-                .row().button("Сумма: не указано", "new_operation_sum")
-                .row().button("Дата: ${LocalDate.now()}", "new_operation_date")
-                .row().button("Категория: не указано", "new_operation_category")
-                .row().button("Счет: не указано", "new_operation_account")
-                .row().button("Отмена", "cancel_operation_creation")
-        )
-        ContextHolder.current[msg.chatId] = NewOperationContext(message.messageId, null, Operation(type = flowType))
+        val operation = Operation(type = flowType)
+        val text = "Добавление операции ${if (flowType == CashFlowType.OUTCOME) "расхода" else "дохода"}"
+        val message = msgService.send(text, operationInputKeyboard(operation))
+        ContextHolder.current[msg.chatId] = NewOperationContext(message.messageId, null, operation)
     }
+
+    private fun operationInputKeyboard(operation: Operation) = MsgKeyboard()
+        .row().button("🔢 Сумма: ${operation.sum ?: NOT_SELECTED}", "new_operation_sum")
+        .row().button("📆 Дата: ${operation.date.toLocalDate()}", "new_operation_date")
+        .row().button("🗂 Категория: ${operation.category?.name ?: NOT_SELECTED}", "new_operation_category")
+        .row().button("💼 Счет: ${operation.account?.name ?: NOT_SELECTED}", "new_operation_account")
+        .row().button(TextKey.CANCEL, "cancel_operation_creation")
 
     @Bean("new_operation_clbk")
     fun newOutcomeOperationClbk() = CallbackHandler { clbk ->
@@ -61,30 +62,14 @@ class OperationHandler(
 
     }
 
-    private fun refreshOperationMessage(
-        msgId: Int, operation: Operation
-    ) {
-        val NOT_SELECTED = "не указано"
-        val keyboard = MsgKeyboard()
-            .row().button("Сумма: ${operation.sum ?: NOT_SELECTED}", "new_operation_sum")
-            .row().button("Дата: ${operation.date.toLocalDate()}", "new_operation_date")
-            .row().button("Категория: ${operation.category?.name ?: NOT_SELECTED}", "new_operation_category")
-            .row().button("Счет: ${operation.account?.name ?: NOT_SELECTED}", "new_operation_account")
-            .row().button("Отмена", "cancel_operation_creation")
+    private fun refreshOperationMessage(msgId: Int, operation: Operation) {
+        val keyboard = operationInputKeyboard(operation)
 
         if (operation.sum != null && operation.category?.name != null && operation.account?.name != null) {
-            keyboard.row().button("Подтвердить", "create_new_operation")
+            keyboard.row().button(TextKey.CONFIRM, "create_new_operation")
         }
-        msgService.edit(
-            msgId,
-            "Добавление операции ${
-                when (operation.type!!) {
-                    CashFlowType.OUTCOME -> "расхода"
-                    CashFlowType.INCOME -> "дохода"
-                }
-            }",
-            keyboard
-        )
+        val text = "Добавление операции ${if (operation.type!! == CashFlowType.OUTCOME) "расхода" else "дохода"}"
+        msgService.edit(msgId, text, keyboard)
     }
 
     @Bean("cancel_operation_creation")
@@ -95,7 +80,7 @@ class OperationHandler(
 
     @Bean("new_operation_sum")
     fun newOperationSum() = CallbackHandler { clbk ->
-        msgService.edit(clbk.msgId, "Введите сумму", MsgKeyboard().row().button("Назад", "new_operation_clbk"))
+        msgService.edit(clbk.msgId, "Введите сумму", MsgKeyboard().row().button(TextKey.BACK, "new_operation_clbk"))
 
         val context: NewOperationContext = ContextHolder.current()!!
         context.handlerId = "new_operation_sum_input"
@@ -116,7 +101,7 @@ class OperationHandler(
         msgService.edit(
             clbk.msgId,
             "Введите дату в формате ГГГГ-ММ-ДД",
-            MsgKeyboard().row().button("Назад", "new_operation_clbk")
+            MsgKeyboard().row().button(TextKey.BACK, "new_operation_clbk")
         )
 
         val context: NewOperationContext = ContextHolder.current()!!
@@ -143,7 +128,7 @@ class OperationHandler(
                 clbk.userId,
                 context.operation.type!!,
                 "category_for_new_operation"
-            ).row().button("Назад", "new_operation_clbk")
+            ).row().button(TextKey.BACK, "new_operation_clbk")
         )
     }
 
@@ -153,8 +138,8 @@ class OperationHandler(
             clbk.msgId,
             "Подтвердите или выберите подкатегорию",
             categoryService.getSubcategoriesKeyboard(clbk.data.toLong(), "subcategory_for_new_operation")
-                .row().button("Выбрать", "set_category_for_new_operation", clbk.data)
-                .row().button("Назад", "new_operation_category")
+                .row().button(TextKey.CONFIRM, "set_category_for_new_operation", clbk.data)
+                .row().button(TextKey.BACK, "new_operation_category")
         )
     }
 
@@ -164,8 +149,8 @@ class OperationHandler(
             clbk.msgId,
             "Подтвердите выбор подкатегории",
             MsgKeyboard()
-                .row().button("Выбрать", "set_category_for_new_operation", clbk.data)
-                .row().button("Назад", "new_operation_category")
+                .row().button(TextKey.CONFIRM, "set_category_for_new_operation", clbk.data)
+                .row().button(TextKey.BACK, "new_operation_category")
         )
     }
 
@@ -185,7 +170,7 @@ class OperationHandler(
             accountService.getKeyboard(
                 clbk.userId,
                 "account_for_new_operation"
-            ).row().button("Назад", "new_operation_clbk")
+            ).row().button(TextKey.BACK, "new_operation_clbk")
         )
     }
 
