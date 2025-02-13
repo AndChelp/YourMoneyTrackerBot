@@ -38,6 +38,8 @@ class TextKey {
         const val CATEGORIES = "🗂 Категории"
         const val ANALYTICS = "📊 Аналитика"
         const val OPERATIONS = "⌛ Операции"
+        const val SHOPPING_LIST = "📝 Список покупок"
+        const val IMPORT = "⤵️ Импорт"
         const val SETTINGS = "⚙️ Настройки"
         const val HELP = "ℹ️ Помощь"
     }

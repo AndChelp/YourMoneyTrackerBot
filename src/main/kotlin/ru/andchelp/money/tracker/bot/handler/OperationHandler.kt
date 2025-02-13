@@ -56,6 +56,7 @@ class OperationHandler(
     fun newOutcomeOperationClbk() = CallbackHandler { clbk ->
 
         val context: NewOperationContext = ContextHolder.current()!!
+        context.operation.id = null
         context.handlerId = null
 
         refreshOperationMessage(clbk.msgId, context.operation)
@@ -80,17 +81,36 @@ class OperationHandler(
 
     @Bean("new_operation_sum")
     fun newOperationSum() = CallbackHandler { clbk ->
-        msgService.edit(clbk.msgId, "Введите сумму", MsgKeyboard().row().button(TextKey.BACK, "new_operation_clbk"))
 
         val context: NewOperationContext = ContextHolder.current()!!
+        val keyboard = operationService.getFrequentlyUsedSumKeyboard(
+            clbk.userId,
+            context.operation.type!!,
+            "new_operation_sum_clbk"
+        )
+
+        msgService.edit(
+            clbk.msgId, "Введите сумму, либо выберите из часто используемых",
+            keyboard.row().button(TextKey.BACK, "new_operation_clbk")
+        )
+
         context.handlerId = "new_operation_sum_input"
+    }
+
+    @Bean("new_operation_sum_clbk")
+    fun newOperationSumClbk() = CallbackHandler { clbk ->
+        val context: NewOperationContext = ContextHolder.current()!!
+        context.handlerId = null
+        context.operation.sum = BigDecimal(clbk.data).setScale(2)
+
+        refreshOperationMessage(context.baseMsgId, context.operation)
     }
 
     @Bean("new_operation_sum_input")
     fun newOperationSumInput() = ContextualTextMessageHandler { msg ->
         val context: NewOperationContext = ContextHolder.current()!!
         context.handlerId = null
-        context.operation.sum = BigDecimal(msg.text)
+        context.operation.sum = BigDecimal(msg.text).setScale(2)
 
         refreshOperationMessage(context.baseMsgId, context.operation)
         msgService.delete(msg.msgId)
@@ -188,13 +208,51 @@ class OperationHandler(
         val operation = context.operation
         operation.user = userService.findById(clbk.userId)
         operationService.save(operation)
+        renderNewOperation(clbk.msgId, operation)
+//        ContextHolder.removeContext()
+    }
 
+    @Bean("new_operation_details_clbk")
+    fun newOperationDetails() = CallbackHandler { clbk ->
+        val context: NewOperationContext = ContextHolder.current()!!
+        renderNewOperation(clbk.msgId, context.operation)
+    }
+
+    fun renderNewOperation(msgId: Int, operation: Operation) {
+        val text = "Добавлена новая операция:\n" +
+                "${operation.account!!.name}, ${operation.category!!.name}, " +
+                (if (operation.type == CashFlowType.INCOME) "+" else "-") +
+                "${operation.sum} ${operation.account!!.currency!!.symbol}"
         msgService.edit(
-            clbk.msgId, "Добавлена новая операция:\n" +
-                    "${operation.account!!.name}, ${operation.category!!.name}, " +
-                    (if (operation.type == CashFlowType.INCOME) "+" else "-") +
-                    "${operation.sum} ${operation.account!!.currency!!.symbol}"
+            msgId,
+            text,
+            MsgKeyboard().row().button("📑 Дублировать", "new_operation_clbk")
+                .row().button("🔄 Повторять", "regular_operation")
         )
-        ContextHolder.removeContext()
+    }
+
+    @Bean("regular_operation")
+    fun regularOperation() = CallbackHandler { clbk ->
+        val context: NewOperationContext = ContextHolder.current()!!
+        msgService.edit(
+            clbk.msgId,
+            "Введите частоту повторя в днях",
+            MsgKeyboard().row().button(TextKey.BACK, "new_operation_details_clbk")
+        )
+        context.handlerId = "regular_operation_input"
+
+    }
+
+    @Bean("regular_operation_input")
+    fun regularOperationInput() = ContextualTextMessageHandler { msg ->
+        val context: NewOperationContext = ContextHolder.current()!!
+        context.operation.repeatFrequency = msg.text.toInt()
+        operationService.save(context.operation)
+        msgService.edit(
+            context.baseMsgId,
+            "Частота повтора операции: ${msg.text} дн.",
+            MsgKeyboard().row().button(TextKey.BACK, "new_operation_details_clbk")
+        )
+        msgService.delete(msg.msgId)
     }
 }

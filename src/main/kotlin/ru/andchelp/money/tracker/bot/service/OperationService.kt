@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
 import ru.andchelp.money.tracker.bot.infra.CashFlowType
+import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
 import ru.andchelp.money.tracker.bot.model.Category
 import ru.andchelp.money.tracker.bot.model.Operation
@@ -20,6 +21,36 @@ class OperationService(
     private val operationRepository: OperationRepository,
     private val accountService: AccountService,
 ) {
+
+    val defaultSums: List<BigDecimal> = listOf(
+        BigDecimal(100).setScale(2),
+        BigDecimal(500).setScale(2),
+        BigDecimal(1000).setScale(2),
+        BigDecimal(1500).setScale(2),
+        BigDecimal(2000).setScale(2),
+        BigDecimal(2500).setScale(2),
+        BigDecimal(3000).setScale(2),
+        BigDecimal(3500).setScale(2)
+    )
+
+    fun getFrequentlyUsedSumKeyboard(userId: Long, type: CashFlowType, callbackId: String): MsgKeyboard {
+        val keyboard = MsgKeyboard()
+        val fSums = operationRepository.findFrequentlyUsedSum(userId, type)
+        if (fSums.size < 8) {
+            val result = defaultSums.filter { it !in fSums }
+
+            fSums.addAll(result.subList(0, 8 - fSums.size))
+        }
+
+        fSums.sorted()
+            .chunked(4)
+            .forEach { sums ->
+                keyboard.row()
+                sums.forEach { keyboard.button(it, callbackId, it) }
+            }
+        return keyboard
+    }
+
 
     fun deleteByAccountId(accountId: Long) {
         operationRepository.deleteByAccountId(accountId)

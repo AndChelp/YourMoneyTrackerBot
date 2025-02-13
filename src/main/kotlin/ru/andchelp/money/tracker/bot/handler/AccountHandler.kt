@@ -120,6 +120,7 @@ class AccountHandler(
         val account = accountService.findById(clbk.data.toLong())
         msgService.edit(
             clbk.msgId, "Счет \"${account.name}\"\n" +
+                    "🆔 Идентификатор: ${account.id}\n" +
                     "🏦 Баланс: ${account.balance}${account.currency!!.symbol}\n" +
                     "💱 Валюта: ${msgService.msgFor(account.currency!!.name!!)}\n" +
                     "⚖️ Учитывать в общем балансе: ${if (account.allowInTotalBalance) "✓" else "✗"}\n" +
