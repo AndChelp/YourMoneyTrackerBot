@@ -24,7 +24,6 @@ class ContextualTextMessageConsumer(
         val context: Context = ContextHolder.current()!!
         handlers[context.handlerId]?.let {
             it.handle(TextMessageUpdate(update))
-            context.handlerId = null
             LOG.debug { "Called handler for ${context.handlerId}" }
         } ?: LOG.debug { "Unexpected message ${context.handlerId}" }
     }

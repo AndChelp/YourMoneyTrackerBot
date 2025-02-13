@@ -2,6 +2,7 @@ package ru.andchelp.money.tracker.bot.infra
 
 import ru.andchelp.money.tracker.bot.model.Operation
 import ru.andchelp.money.tracker.bot.service.OperationFilter
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
 
@@ -10,6 +11,10 @@ class ContextHolder {
     companion object {
         val chatId: ThreadLocal<Long> = ThreadLocal()
         val current: ConcurrentHashMap<Long, Context> = ConcurrentHashMap()
+
+        fun setContext(context: Context) {
+            current[chatId.get()] = context
+        }
 
         fun removeContext() {
             current.remove(chatId.get())
@@ -82,4 +87,11 @@ class CategoryReportContext(
 class ImportOperationsContext(
     baseMsgId: Int,
     handlerId: String? = null,
+) : Context(baseMsgId, handlerId)
+
+class ShoppingListItemContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+    var name: String? = null,
+    var sum: BigDecimal? = null,
 ) : Context(baseMsgId, handlerId)

@@ -23,14 +23,14 @@ class OperationService(
 ) {
 
     val defaultSums: List<BigDecimal> = listOf(
-        BigDecimal(100).setScale(2),
-        BigDecimal(500).setScale(2),
-        BigDecimal(1000).setScale(2),
-        BigDecimal(1500).setScale(2),
-        BigDecimal(2000).setScale(2),
-        BigDecimal(2500).setScale(2),
-        BigDecimal(3000).setScale(2),
-        BigDecimal(3500).setScale(2)
+        BigDecimal(100).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(500).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(1000).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(1500).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(2000).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(2500).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(3000).setScale(2, RoundingMode.HALF_EVEN),
+        BigDecimal(3500).setScale(2, RoundingMode.HALF_EVEN)
     )
 
     fun getFrequentlyUsedSumKeyboard(userId: Long, type: CashFlowType, callbackId: String): MsgKeyboard {

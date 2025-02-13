@@ -15,8 +15,10 @@ import ru.andchelp.money.tracker.bot.service.AccountService
 import ru.andchelp.money.tracker.bot.service.CategoryService
 import ru.andchelp.money.tracker.bot.service.MessageService
 import ru.andchelp.money.tracker.bot.service.OperationService
+import ru.andchelp.money.tracker.bot.service.ShoppingListService
 import ru.andchelp.money.tracker.bot.service.UserService
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 @Configuration
@@ -25,7 +27,8 @@ class OperationHandler(
     private val categoryService: CategoryService,
     private val accountService: AccountService,
     private val operationService: OperationService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val shoppingListService: ShoppingListService
 ) {
     companion object {
         const val NOT_SELECTED = "не указано"
@@ -61,6 +64,16 @@ class OperationHandler(
 
         refreshOperationMessage(clbk.msgId, context.operation)
 
+    }
+
+    @Bean("new_outcome_shopping_list")
+    fun newOutcomeShoppingList() = CallbackHandler { clbk ->
+        val boughtSum = shoppingListService.findBoughtByUserId(clbk.userId)
+            .sumOf { it.sum!! }.setScale(2, RoundingMode.HALF_EVEN)
+        val operation = Operation(type = CashFlowType.OUTCOME, sum = boughtSum)
+        ContextHolder.setContext(NewOperationContext(clbk.msgId, operation = operation))
+        refreshOperationMessage(clbk.msgId, operation)
+        shoppingListService.deleteBought(clbk.userId)
     }
 
     private fun refreshOperationMessage(msgId: Int, operation: Operation) {
@@ -101,7 +114,7 @@ class OperationHandler(
     fun newOperationSumClbk() = CallbackHandler { clbk ->
         val context: NewOperationContext = ContextHolder.current()!!
         context.handlerId = null
-        context.operation.sum = BigDecimal(clbk.data).setScale(2)
+        context.operation.sum = BigDecimal(clbk.data).setScale(2, RoundingMode.HALF_EVEN)
 
         refreshOperationMessage(context.baseMsgId, context.operation)
     }
@@ -110,7 +123,7 @@ class OperationHandler(
     fun newOperationSumInput() = ContextualTextMessageHandler { msg ->
         val context: NewOperationContext = ContextHolder.current()!!
         context.handlerId = null
-        context.operation.sum = BigDecimal(msg.text).setScale(2)
+        context.operation.sum = BigDecimal(msg.text).setScale(2, RoundingMode.HALF_EVEN)
 
         refreshOperationMessage(context.baseMsgId, context.operation)
         msgService.delete(msg.msgId)
