@@ -30,6 +30,8 @@ data class Category(
 @Repository
 interface CategoryRepository : JpaRepository<Category, Long> {
 
+    fun findByNameAndUserId(name: String, userId: Long): Category
+
     fun findByUserIdAndTypeAndParenCategoryIsNull(userId: Long, type: CashFlowType): List<Category>
 
     fun findByParenCategoryId(id: Long): List<Category>

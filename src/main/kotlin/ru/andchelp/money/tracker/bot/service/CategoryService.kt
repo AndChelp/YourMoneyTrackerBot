@@ -13,6 +13,10 @@ class CategoryService(
     private val userService: UserService,
 ) {
 
+    fun findByNameAndUserId(name: String, userId: Long): Category {
+        return categoryRepository.findByNameAndUserId(name, userId)
+    }
+
     fun findByIds(ids: Set<Long>): List<Category> {
         return categoryRepository.findAllById(ids)
     }
@@ -50,6 +54,8 @@ class CategoryService(
         categoryRepository.deleteById(id)
     }
 
+    @Deprecated(message = "for removal, use findByIdAndUserId")
+    //todo add findByIdAndUserId
     fun findById(id: Long): Category {
         return categoryRepository.findById(id).orElseThrow()
     }

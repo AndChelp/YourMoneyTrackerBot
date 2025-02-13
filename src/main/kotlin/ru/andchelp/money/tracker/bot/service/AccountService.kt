@@ -31,8 +31,13 @@ class AccountService(
         accountRepository.save(account)
     }
 
+    @Deprecated(message = "for removal, use findByIdAndUserId")
     fun findById(id: Long): Account {
         return accountRepository.findById(id).orElseThrow()
+    }
+
+    fun findByIdAndUserId(id: Long, userId: Long): Account {
+        return accountRepository.findByIdAndUserId(id, userId)
     }
 
     fun newAccount(userId: Long, accountName: String, currency: String) {

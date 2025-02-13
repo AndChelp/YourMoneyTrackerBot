@@ -9,6 +9,7 @@ class MenuConfig {
             .row().button(TextKey.INCOME).button(TextKey.OUTCOME)
             .row().button(TextKey.ACCOUNTS).button(TextKey.CATEGORIES)
             .row().button(TextKey.ANALYTICS).button(TextKey.OPERATIONS)
+            .row().button(TextKey.SHOPPING_LIST).button(TextKey.IMPORT)
             .row().button(TextKey.SETTINGS).button(TextKey.HELP)
     }
 }

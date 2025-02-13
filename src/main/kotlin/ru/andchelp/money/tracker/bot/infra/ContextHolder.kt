@@ -78,3 +78,8 @@ class CategoryReportContext(
     var dateEnd: LocalDate = LocalDate.now(),
     val accountIds: MutableSet<Long> = mutableSetOf()
 ) : Context(baseMsgId, handlerId)
+
+class ImportOperationsContext(
+    baseMsgId: Int,
+    handlerId: String? = null,
+) : Context(baseMsgId, handlerId)

@@ -7,6 +7,8 @@ import ru.andchelp.money.tracker.bot.model.Account
 @Repository
 interface AccountRepository : JpaRepository<Account, Long> {
 
+    fun findByIdAndUserId(id: Long, userId: Long): Account
+
     fun findByUserId(userId: Long): List<Account>
 
     fun findByUserIdAndAllowInTotalBalanceTrue(userId: Long): List<Account>
