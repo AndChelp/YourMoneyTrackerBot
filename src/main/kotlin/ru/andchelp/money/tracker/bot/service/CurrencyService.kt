@@ -5,8 +5,8 @@ import ru.andchelp.money.tracker.bot.client.OpenExchangeClient
 import ru.andchelp.money.tracker.bot.config.BotProperties
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Currency
-import ru.andchelp.money.tracker.bot.repository.CurrencyExchangeRateRepository
-import ru.andchelp.money.tracker.bot.repository.CurrencyRepository
+import ru.andchelp.money.tracker.bot.model.CurrencyExchangeRateRepository
+import ru.andchelp.money.tracker.bot.model.CurrencyRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
 

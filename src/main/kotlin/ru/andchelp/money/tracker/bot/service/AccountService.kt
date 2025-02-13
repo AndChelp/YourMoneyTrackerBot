@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.andchelp.money.tracker.bot.infra.MsgKeyboard
 import ru.andchelp.money.tracker.bot.model.Account
-import ru.andchelp.money.tracker.bot.repository.AccountRepository
+import ru.andchelp.money.tracker.bot.model.AccountRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
 

@@ -6,6 +6,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -25,3 +27,13 @@ data class Account(
 
     var balance: BigDecimal = BigDecimal.ZERO
 )
+
+@Repository
+interface AccountRepository : JpaRepository<Account, Long> {
+
+    fun findByIdAndUserId(id: Long, userId: Long): Account
+
+    fun findByUserId(userId: Long): List<Account>
+
+    fun findByUserIdAndAllowInTotalBalanceTrue(userId: Long): List<Account>
+}

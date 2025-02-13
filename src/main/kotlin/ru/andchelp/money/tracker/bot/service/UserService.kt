@@ -2,7 +2,7 @@ package ru.andchelp.money.tracker.bot.service
 
 import org.springframework.stereotype.Service
 import ru.andchelp.money.tracker.bot.model.User
-import ru.andchelp.money.tracker.bot.repository.UserRepository
+import ru.andchelp.money.tracker.bot.model.UserRepository
 
 @Service
 class UserService(private val userRepository: UserRepository, private val currencyService: CurrencyService) {

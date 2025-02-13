@@ -6,6 +6,9 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.stereotype.Repository
 
 @Entity
 @Table(name = "currencies")
@@ -28,3 +31,15 @@ data class CurrencyExchangeRate(
     val rateCurrency: Currency? = null,
     var rate: Double? = null
 )
+
+
+@Repository
+interface CurrencyRepository : JpaRepository<Currency, String> {
+    fun findByCode(code: String): Currency
+}
+
+@Repository
+interface CurrencyExchangeRateRepository : JpaRepository<CurrencyExchangeRate, String> {
+    @Query("select a from CurrencyExchangeRate a where a.baseCurrency.code = ?1 and a.rateCurrency.code = ?2")
+    fun findByCurrencies(baseCurrency: String, rateCurrency: String): CurrencyExchangeRate?
+}
