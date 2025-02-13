@@ -7,14 +7,12 @@ fun interface ContextualTextMessageHandler {
 }
 
 data class TextMessageUpdate(
-    val chatId: Long,
     val msgId: Int,
     val userId: Long,
     val text: String,
     val update: Update,
 ) {
     constructor(update: Update) : this(
-        update.message.chatId,
         update.message.messageId,
         update.message.from.id,
         update.message.text,

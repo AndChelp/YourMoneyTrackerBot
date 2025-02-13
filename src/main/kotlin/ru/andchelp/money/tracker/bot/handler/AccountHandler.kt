@@ -62,7 +62,7 @@ class AccountHandler(
     @Bean("new_account")
     fun newAccount() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, TextKey.WRITE_ACC_NAME)
-        ContextHolder.current[clbk.chatId] = NewAccountContext(clbk.msgId, "account_name_msg")
+        ContextHolder.set(NewAccountContext(clbk.msgId, "account_name_msg"))
     }
 
     @Bean("account_name_msg")
@@ -110,12 +110,12 @@ class AccountHandler(
             accountsKeyboard
         )
 
-        ContextHolder.current.remove(clbk.chatId)
+        ContextHolder.remove()
     }
 
     @Bean("account_info")
     fun accountInfo() = CallbackHandler { clbk ->
-        ContextHolder.removeContext()
+        ContextHolder.remove()
 
         val account = accountService.findById(clbk.data.toLong())
         msgService.edit(
@@ -138,7 +138,7 @@ class AccountHandler(
     }
 
     private fun changeAccountInfo(account: Account, msgId: Int) {
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         msgService.edit(
             msgId,
             "Изменение параметров счета",
@@ -160,8 +160,9 @@ class AccountHandler(
 
     @Bean("change_account_name")
     fun changeAccountName() = CallbackHandler { clbk ->
-        ContextHolder.current[clbk.chatId] =
+        ContextHolder.set(
             EditAccountContext(clbk.msgId, "change_account_name_input", accountId = clbk.data.toLong())
+        )
 
         msgService.edit(
             clbk.msgId,
@@ -183,7 +184,7 @@ class AccountHandler(
 
     @Bean("change_account_currency")
     fun changeAccountCurrency() = CallbackHandler { clbk ->
-        ContextHolder.current[clbk.chatId] = EditAccountContext(clbk.msgId, accountId = clbk.data.toLong())
+        ContextHolder.set(EditAccountContext(clbk.msgId, accountId = clbk.data.toLong()))
 
         msgService.edit(
             clbk.msgId,

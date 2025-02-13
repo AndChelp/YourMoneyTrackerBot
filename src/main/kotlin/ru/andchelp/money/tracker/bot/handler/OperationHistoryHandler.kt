@@ -32,7 +32,7 @@ class OperationHistoryHandler(
     @Bean("operation_history")
     fun operationHistory() = GeneralTextMessageHandler { msg ->
         if (msg.text != TextKey.OPERATIONS) return@GeneralTextMessageHandler
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         renderHistoryMsg(page = 0, filter = OperationFilter(msg.userId))
     }
 
@@ -49,7 +49,7 @@ class OperationHistoryHandler(
         var context: OperationFilterContext? = ContextHolder.current()
         if (context == null) {
             context = OperationFilterContext(clbk.msgId, operationFilter = OperationFilter(clbk.userId))
-            ContextHolder.current[clbk.chatId] = context
+            ContextHolder.set(context)
         }
         renderHistoryFilter(context.operationFilter, clbk.msgId)
     }

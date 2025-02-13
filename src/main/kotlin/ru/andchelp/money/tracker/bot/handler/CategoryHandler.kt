@@ -37,7 +37,7 @@ class CategoryHandler(
 
     @Bean("categories_btn_clbk")
     fun categoriesClbk() = CallbackHandler { clbk ->
-        ContextHolder.current.remove(clbk.chatId)
+        ContextHolder.remove()
         msgService.edit(
             clbk.msgId,
             CATEGORY_MANAGEMENT,
@@ -49,11 +49,11 @@ class CategoryHandler(
 
     @Bean("root_categories")
     fun categoriesInfoBtn() = CallbackHandler { clbk ->
-        rootCategories(clbk.chatId, CashFlowType.valueOf(clbk.data), clbk.userId, clbk.msgId)
+        rootCategories(CashFlowType.valueOf(clbk.data), clbk.userId, clbk.msgId)
     }
 
-    private fun rootCategories(chatId: Long, cashFlowType: CashFlowType, userId: Long, msgId: Int) {
-        ContextHolder.current.remove(chatId)
+    private fun rootCategories(cashFlowType: CashFlowType, userId: Long, msgId: Int) {
+        ContextHolder.remove()
 
         val s = when (cashFlowType) {
             CashFlowType.INCOME -> "дохода"
@@ -75,7 +75,7 @@ class CategoryHandler(
     }
 
     private fun subcategories(msgId: Int, categoryId: Long) {
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         val category = categoryService.findById(categoryId)
         val subcategoriesKeyboard = categoryService
             .getSubcategoriesKeyboard(categoryId, "subcategory")
@@ -90,7 +90,7 @@ class CategoryHandler(
 
     @Bean("subcategory")
     fun subcategory() = CallbackHandler { clbk ->
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         val categoryIdStr = clbk.data.substringBefore(':')
         val categoryId = categoryIdStr.toLong()
         val category = categoryService.findById(categoryId)
@@ -104,19 +104,20 @@ class CategoryHandler(
 
     @Bean("add_root_category")
     fun addRootCategory() = CallbackHandler { clbk ->
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         msgService.edit(
             clbk.msgId,
             "Введите название категории",
             MsgKeyboard().row().button(TextKey.BACK, "root_categories", clbk.data)
         )
-        ContextHolder.current[clbk.chatId] =
+        ContextHolder.set(
             NewCategoryContext(clbk.msgId, "category_name_input", CashFlowType.valueOf(clbk.data))
+        )
     }
 
     @Bean("add_subcategory")
     fun addSubcategory() = CallbackHandler { clbk ->
-        ContextHolder.removeContext()
+        ContextHolder.remove()
         val category = categoryService.findById(clbk.data.toLong())
 
         msgService.edit(
@@ -124,13 +125,14 @@ class CategoryHandler(
             "Введите название подкатегории для категории ${category.name}",
             MsgKeyboard().row().button(TextKey.BACK, "subcategories", category.id)
         )
-        ContextHolder.current[clbk.chatId] =
+        ContextHolder.set(
             NewCategoryContext(
                 clbk.msgId,
                 "subcategory_name_input",
                 category.type,
                 parentCategory = category.id
             )
+        )
     }
 
     @Bean("subcategory_name_input")
@@ -167,7 +169,7 @@ class CategoryHandler(
         if (context.parentCategory != null) {
             subcategories(clbk.msgId, context.parentCategory!!)
         } else {
-            rootCategories(clbk.chatId, context.type!!, clbk.userId, clbk.msgId)
+            rootCategories(context.type!!, clbk.userId, clbk.msgId)
         }
 
 
@@ -193,7 +195,7 @@ class CategoryHandler(
         if (parentCategoryId != null) {
             subcategories(clbk.msgId, parentCategoryId)
         } else {
-            rootCategories(clbk.chatId, category.type!!, clbk.userId, clbk.msgId)
+            rootCategories(category.type!!, clbk.userId, clbk.msgId)
         }
 
 

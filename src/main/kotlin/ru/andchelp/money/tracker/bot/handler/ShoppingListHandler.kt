@@ -58,7 +58,7 @@ class ShoppingListHandler(
                     "Введите название",
             MsgKeyboard().row().button(TextKey.CANCEL, "shopping_list_clbk")
         )
-        ContextHolder.setContext(ShoppingListItemContext(clbk.msgId, handlerId = "shopping_list_name_input"))
+        ContextHolder.set(ShoppingListItemContext(clbk.msgId, handlerId = "shopping_list_name_input"))
     }
 
     @Bean("shopping_list_name_input")

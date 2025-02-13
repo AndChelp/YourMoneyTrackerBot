@@ -7,14 +7,12 @@ fun interface CallbackHandler {
 }
 
 data class CallbackUpdate(
-    val chatId: Long,
     val msgId: Int,
     val userId: Long,
     val data: String,
     val update: Update
 ) {
     constructor(update: Update) : this(
-        update.callbackQuery.message.chatId,
         update.callbackQuery.message.messageId,
         update.callbackQuery.from.id,
         update.callbackQuery.data.substringAfter(':', ""),

@@ -49,7 +49,7 @@ class AnalyticsHandler(
         var context: CategoryReportContext? = ContextHolder.current()
         if (context == null) {
             context = CategoryReportContext(clbk.msgId)
-            ContextHolder.current[clbk.chatId] = context
+            ContextHolder.set(context)
         }
 
         msgService.edit(

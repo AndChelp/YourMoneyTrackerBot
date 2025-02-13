@@ -10,18 +10,18 @@ class ContextHolder {
 
     companion object {
         val chatId: ThreadLocal<Long> = ThreadLocal()
-        val current: ConcurrentHashMap<Long, Context> = ConcurrentHashMap()
+        val context: ConcurrentHashMap<Long, Context> = ConcurrentHashMap()
 
-        fun setContext(context: Context) {
-            current[chatId.get()] = context
+        fun set(context: Context) {
+            this.context[chatId.get()] = context
         }
 
-        fun removeContext() {
-            current.remove(chatId.get())
+        fun remove() {
+            this.context.remove(chatId.get())
         }
 
         inline fun <reified T : Context> current(): T? {
-            val context = current[chatId.get()]
+            val context = context[chatId.get()]
             if (context is T) {
                 return context
             }

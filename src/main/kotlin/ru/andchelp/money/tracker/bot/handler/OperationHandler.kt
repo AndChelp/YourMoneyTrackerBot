@@ -45,7 +45,7 @@ class OperationHandler(
         val operation = Operation(type = flowType)
         val text = "Добавление операции ${if (flowType == CashFlowType.OUTCOME) "расхода" else "дохода"}"
         val message = msgService.send(text, operationInputKeyboard(operation))
-        ContextHolder.current[msg.chatId] = NewOperationContext(message.messageId, null, operation)
+        ContextHolder.set(NewOperationContext(message.messageId, null, operation))
     }
 
     private fun operationInputKeyboard(operation: Operation) = MsgKeyboard()
@@ -71,7 +71,7 @@ class OperationHandler(
         val boughtSum = shoppingListService.findBoughtByUserId(clbk.userId)
             .sumOf { it.sum!! }.setScale(2, RoundingMode.HALF_EVEN)
         val operation = Operation(type = CashFlowType.OUTCOME, sum = boughtSum)
-        ContextHolder.setContext(NewOperationContext(clbk.msgId, operation = operation))
+        ContextHolder.set(NewOperationContext(clbk.msgId, operation = operation))
         refreshOperationMessage(clbk.msgId, operation)
         shoppingListService.deleteBought(clbk.userId)
     }
@@ -89,7 +89,7 @@ class OperationHandler(
     @Bean("cancel_operation_creation")
     fun cancelOperationCreation() = CallbackHandler { clbk ->
         msgService.delete(clbk.msgId)
-        ContextHolder.removeContext()
+        ContextHolder.remove()
     }
 
     @Bean("new_operation_sum")

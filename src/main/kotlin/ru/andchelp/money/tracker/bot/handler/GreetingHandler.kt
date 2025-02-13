@@ -49,7 +49,7 @@ class GreetingHandler(
     @Bean("greeting_new_account")
     fun newAccountClbk() = CallbackHandler { clbk ->
         msgService.edit(clbk.msgId, TextKey.WRITE_ACC_NAME)
-        ContextHolder.current[clbk.chatId] = GreetingNewAccountContext(clbk.msgId, "greeting_account_name_msg")
+        ContextHolder.set(GreetingNewAccountContext(clbk.msgId, "greeting_account_name_msg"))
     }
 
     @Bean("greeting_account_name_msg")
@@ -86,7 +86,7 @@ class GreetingHandler(
         msgService.send(TextKey.END_GREETING_TEXT, MenuConfig.FULL)
         val accountContext: GreetingNewAccountContext = ContextHolder.current()!!
         accountService.newAccount(clbk.userId, accountContext.name!!, accountContext.currency!!)
-        ContextHolder.removeContext()
+        ContextHolder.remove()
     }
 
 }

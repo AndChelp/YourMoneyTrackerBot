@@ -40,13 +40,13 @@ class ImportHandler(
             MsgKeyboard().row()
                 .button(TextKey.CANCEL, "cancel_import")
         )
-        ContextHolder.current[msg.chatId] = ImportOperationsContext(message.messageId, handlerId = "text_import")
+        ContextHolder.set(ImportOperationsContext(message.messageId, handlerId = "text_import"))
     }
 
     @Bean("cancel_import")
     fun cancelImport() = CallbackHandler { clbk ->
         msgService.delete(clbk.msgId)
-        ContextHolder.removeContext()
+        ContextHolder.remove()
     }
 
     @Bean("text_import")
